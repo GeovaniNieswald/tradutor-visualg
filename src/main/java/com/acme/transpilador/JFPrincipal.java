@@ -16,6 +16,127 @@ public class JFPrincipal extends javax.swing.JFrame {
         initComponents();
     }
 
+    private String transpilarParaJava(String vetCodigoOriginal[]) {
+        String codigoTranspiladoJava = "";
+
+        int numeroLinha = 0;
+        boolean iniciouBlocoVar = false;
+        String conteudoLinhaLimpa;
+        String auxVet[];
+        String linhaTranspilada;
+
+        for (var conteudoLinha : vetCodigoOriginal) {
+            conteudoLinhaLimpa = conteudoLinha.trim().toLowerCase();
+
+            if (numeroLinha == 0) {
+                auxVet = conteudoLinha.split("\"");
+                linhaTranspilada = "public class " + auxVet[1].replace(" ", "") + " {";
+            } else {
+                if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
+                    linhaTranspilada = "\t" + conteudoLinha;
+                } else {
+                    if (iniciouBlocoVar) {
+                        iniciouBlocoVar = !conteudoLinhaLimpa.startsWith("inicio");
+
+                        if (iniciouBlocoVar) {
+                            auxVet = conteudoLinha.split(":");
+                            linhaTranspilada = this.substituirVariaveisJava(auxVet);
+                        } else {
+                            linhaTranspilada = "\tpublic static void main(String args[]) {";
+                        }
+                    } else {
+                        iniciouBlocoVar = conteudoLinhaLimpa.startsWith("var");
+
+                        if (iniciouBlocoVar) {
+                            linhaTranspilada = "";
+                        } else {
+
+                            // ........
+                            linhaTranspilada = conteudoLinha + "111";
+                        }
+                    }
+                }
+            }
+
+            codigoTranspiladoJava += linhaTranspilada + "\r\n";
+            numeroLinha++;
+        }
+
+        return codigoTranspiladoJava;
+    }
+
+    private String transpilarParaPHP(String vetCodigoOriginal[]) {
+        String codigoTranspiladoPHP = "";
+        //
+        // TODO: Fazer transpilação para PHP
+        //
+        return codigoTranspiladoPHP;
+    }
+
+    private String substituirVariaveisJava(String[] auxVet) {
+        String nomeVariaveis = auxVet[0].trim().toLowerCase();
+        String tipoVariaveis = auxVet[1].trim().toLowerCase();
+
+        String linhaVariavel = "\tprivate static ";
+
+        if (tipoVariaveis.startsWith("vetor")) {
+            auxVet = tipoVariaveis.split(" de ");
+
+            String tamanhoVetor = auxVet[0].replace(" ", "").replace("vetor", "").replace("[", "").replace("]", "");
+
+            String tipoVetor = auxVet[1].trim();
+            String tipoVetorJava = this.substituirTipoVariavelJava(tipoVetor);
+
+            boolean ehMatriz = tamanhoVetor.contains(",");
+            int tamanhoVet1 = 0;
+            int tamanhoVet2 = 0;
+
+            if (ehMatriz) {
+                auxVet = tamanhoVetor.split(",");
+                tamanhoVet1 = Integer.parseInt(auxVet[0].split("\\.\\.")[1]);
+                tamanhoVet2 = Integer.parseInt(auxVet[1].split("\\.\\.")[1]);
+            } else {
+                tamanhoVet1 = Integer.parseInt(tamanhoVetor.split("\\.\\.")[1]);
+            }
+
+            if (ehMatriz) {
+                linhaVariavel += tipoVetorJava + "[][] " + nomeVariaveis + " = new " + tipoVetorJava + "[" + tamanhoVet1 + "]" + "[" + tamanhoVet2 + "];";
+            } else {
+                linhaVariavel += tipoVetorJava + "[] " + nomeVariaveis + " = new " + tipoVetorJava + "[" + tamanhoVet1 + "];";
+            }
+        } else {
+            linhaVariavel += this.substituirTipoVariavelJava(tipoVariaveis);
+            linhaVariavel += " " + nomeVariaveis + ";";
+        }
+
+        return linhaVariavel;
+    }
+
+    private String substituirTipoVariavelJava(String tipoOrigem) {
+        tipoOrigem = tipoOrigem.trim().toLowerCase();
+        String tipoDestino;
+
+        switch (tipoOrigem) {
+            case "inteiro":
+                tipoDestino = "int";
+                break;
+            case "real":
+                tipoDestino = "double";
+                break;
+            case "caractere":
+                tipoDestino = "String";
+                break;
+            case "logico":
+                tipoDestino = "boolean";
+                break;
+            default:
+                tipoDestino = tipoOrigem;
+                break;
+        }
+
+        return tipoDestino;
+    }
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -85,7 +206,6 @@ public class JFPrincipal extends javax.swing.JFrame {
         jLabel2.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
         jLabel2.setText("Código em Visualg");
 
-        jtaCodigoVisualg.setEditable(false);
         jtaCodigoVisualg.setColumns(20);
         jtaCodigoVisualg.setRows(5);
         jtaCodigoVisualg.setPreferredSize(null);
@@ -143,12 +263,8 @@ public class JFPrincipal extends javax.swing.JFrame {
                 .addGap(30, 30, 30)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addGroup(jPanel3Layout.createSequentialGroup()
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGroup(jPanel3Layout.createSequentialGroup()
-                            .addComponent(jScrollPane3)
-                            .addGap(0, 0, 0)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 575, Short.MAX_VALUE)
+                        .addComponent(jScrollPane3))
                     .addComponent(jLabel6)
                     .addComponent(jLabel3))
                 .addGap(0, 0, 0)
@@ -282,17 +398,19 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private void jbTranspilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTranspilarActionPerformed
         String codigo = jtaCodigoVisualg.getText();
+        String vetCodigoOriginal[] = codigo.split("\r\n");
 
-        String aux[] = codigo.split("\"");
-        String nomeClasse = aux[1];
+        String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal);
+        String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
 
-        codigo = codigo.replace("Algoritmo \"" + nomeClasse + "\"", "public class " + nomeClasse + " {");
+        System.out.println("Código JAVA: ");
+        System.out.println(codigoTranspiladoJava);
+        System.out.println("");
+        System.out.println("Código PHP: ");
+        System.out.println(codigoTranspiladoPHP);
 
-        codigo = codigo.replace("Fimalgoritmo", "\t}\n}\n");
-
-        jtaCodigoJava.setText(codigo);
-
-        // TODO add your handling code here:
+        jtaCodigoJava.setText(codigoTranspiladoJava);
+        jtaCodigoPHP.setText(codigoTranspiladoPHP);
     }//GEN-LAST:event_jbTranspilarActionPerformed
 
     private void jbSalvarJavaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarJavaActionPerformed
