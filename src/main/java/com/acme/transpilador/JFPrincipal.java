@@ -20,39 +20,35 @@ public class JFPrincipal extends javax.swing.JFrame {
         String codigoTranspiladoJava = "";
 
         int numeroLinha = 0;
-        boolean iniciouBlocoVar = false;
+        boolean blocoVar = false;
         String conteudoLinhaLimpa;
-        String auxVet[];
         String linhaTranspilada;
 
         for (var conteudoLinha : vetCodigoOriginal) {
             conteudoLinhaLimpa = conteudoLinha.trim().toLowerCase();
 
             if (numeroLinha == 0) {
-                auxVet = conteudoLinha.split("\"");
-                linhaTranspilada = "public class " + auxVet[1].replace(" ", "") + " {";
+                String nomeClasse[] = conteudoLinha.split("\"");
+                linhaTranspilada = "public class " + nomeClasse[1].replace(" ", "") + " {";
             } else {
                 if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
                     linhaTranspilada = "\t" + conteudoLinha;
                 } else {
-                    if (iniciouBlocoVar) {
-                        iniciouBlocoVar = !conteudoLinhaLimpa.startsWith("inicio");
+                    if (blocoVar) {
+                        blocoVar = !conteudoLinhaLimpa.startsWith("inicio");
 
-                        if (iniciouBlocoVar) {
-                            auxVet = conteudoLinha.split(":");
-                            linhaTranspilada = this.substituirVariaveisJava(auxVet);
+                        if (blocoVar) {
+                            linhaTranspilada = this.substituirVariaveisJava(conteudoLinha);
                         } else {
                             linhaTranspilada = "\tpublic static void main(String args[]) {";
                         }
                     } else {
-                        iniciouBlocoVar = conteudoLinhaLimpa.startsWith("var");
+                        blocoVar = conteudoLinhaLimpa.startsWith("var");
 
-                        if (iniciouBlocoVar) {
+                        if (blocoVar) {
                             linhaTranspilada = "";
                         } else {
-
-                            // ........
-                            linhaTranspilada = conteudoLinha + "111";
+                            linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
                         }
                     }
                 }
@@ -73,43 +69,48 @@ public class JFPrincipal extends javax.swing.JFrame {
         return codigoTranspiladoPHP;
     }
 
-    private String substituirVariaveisJava(String[] auxVet) {
-        String nomeVariaveis = auxVet[0].trim().toLowerCase();
-        String tipoVariaveis = auxVet[1].trim().toLowerCase();
+    private String substituirVariaveisJava(String conteudoLinha) {
+        String nomesTipo[] = conteudoLinha.split(":");
 
-        String linhaVariavel = "\tprivate static ";
+        String nomes = nomesTipo[0].trim().toLowerCase().trim();
+        String tipo = nomesTipo[1].trim().toLowerCase().trim();
 
-        if (tipoVariaveis.startsWith("vetor")) {
-            auxVet = tipoVariaveis.split(" de ");
+        String linhaTranspilada = "\tprivate static ";
 
-            String tamanhoVetor = auxVet[0].replace(" ", "").replace("vetor", "").replace("[", "").replace("]", "");
+        if (tipo.startsWith("vetor")) {
+            String tamanhoTipoComentario[] = tipo.split(" de ");
+            String tipoComentario[] = tamanhoTipoComentario[1].split("//");
 
-            String tipoVetor = auxVet[1].trim();
-            String tipoVetorJava = this.substituirTipoVariavelJava(tipoVetor);
+            String tamanho = tamanhoTipoComentario[0].trim();
+            tamanho = tamanho.replace(" ", "").replace("vetor", "").replace("[", "").replace("]", "");
+            tipo = tipoComentario[0].trim();
+            String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
 
-            boolean ehMatriz = tamanhoVetor.contains(",");
-            int tamanhoVet1 = 0;
-            int tamanhoVet2 = 0;
+            String tipoTranspilado = this.substituirTipoVariavelJava(tipo);
 
-            if (ehMatriz) {
-                auxVet = tamanhoVetor.split(",");
-                tamanhoVet1 = Integer.parseInt(auxVet[0].split("\\.\\.")[1]);
-                tamanhoVet2 = Integer.parseInt(auxVet[1].split("\\.\\.")[1]);
-            } else {
-                tamanhoVet1 = Integer.parseInt(tamanhoVetor.split("\\.\\.")[1]);
-            }
+            boolean ehMatriz = tamanho.contains(",");
 
             if (ehMatriz) {
-                linhaVariavel += tipoVetorJava + "[][] " + nomeVariaveis + " = new " + tipoVetorJava + "[" + tamanhoVet1 + "]" + "[" + tamanhoVet2 + "];";
+                String tamanhoMatriz[] = tamanho.split(",");
+                int tamanhoMat1 = Integer.parseInt(tamanhoMatriz[0].split("\\.\\.")[1]);
+                int tamanhoMat2 = Integer.parseInt(tamanhoMatriz[1].split("\\.\\.")[1]);
+
+                linhaTranspilada += tipoTranspilado + "[][] " + nomes + " = new " + tipoTranspilado + "[" + tamanhoMat1 + "]" + "[" + tamanhoMat2 + "]; " + comentario;
             } else {
-                linhaVariavel += tipoVetorJava + "[] " + nomeVariaveis + " = new " + tipoVetorJava + "[" + tamanhoVet1 + "];";
+                int tamanhoVet = Integer.parseInt(tamanho.split("\\.\\.")[1]);
+                linhaTranspilada += tipoTranspilado + "[] " + nomes + " = new " + tipoTranspilado + "[" + tamanhoVet + "]; " + comentario;
             }
         } else {
-            linhaVariavel += this.substituirTipoVariavelJava(tipoVariaveis);
-            linhaVariavel += " " + nomeVariaveis + ";";
+            String tipoComentario[] = tipo.split("//");
+
+            tipo = tipoComentario[0].trim();
+            String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
+
+            linhaTranspilada += this.substituirTipoVariavelJava(tipo);
+            linhaTranspilada += " " + nomes + "; " + comentario;
         }
 
-        return linhaVariavel;
+        return linhaTranspilada;
     }
 
     private String substituirTipoVariavelJava(String tipoOrigem) {
@@ -135,6 +136,45 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
 
         return tipoDestino;
+    }
+
+    private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
+        String linhaTranspilada = "\t";
+
+        char caracteres[] = conteudoLinha.toCharArray();
+        for (var caracter : caracteres) {
+            if (caracter == ' ') {
+                linhaTranspilada += " ";
+            } else {
+                break;
+            }
+        }
+
+        if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
+            linhaTranspilada = "\t}\r\n}";
+        } else if (conteudoLinhaLimpa.startsWith("se")) {
+            int inicio = conteudoLinha.indexOf("(");
+            int fim = conteudoLinha.lastIndexOf(")") + 1;
+
+            String condicao = this.substituirCondicional(conteudoLinha.substring(inicio, fim));
+
+            linhaTranspilada += "if " + condicao + " {";
+        } else if (conteudoLinhaLimpa.startsWith("senao") || conteudoLinhaLimpa.startsWith("senão")) {
+            linhaTranspilada += "} else {";
+        } else if (conteudoLinhaLimpa.startsWith("fimse")) {
+            linhaTranspilada += "}";
+        } else {
+            linhaTranspilada += conteudoLinha;
+        }
+
+        return linhaTranspilada;
+    }
+
+    private String substituirCondicional(String condicao) {
+        condicao = condicao.replace("verdadeiro", "true").replace("falso", "false");
+        condicao = condicao.replace(" = ", " == ").replace("<>", "!=").replace(" e ", " && ").replace(" ou ", " || ").replace("não", "!").replace(" mod ", " % ");
+
+        return condicao;
     }
 
     @SuppressWarnings("unchecked")
