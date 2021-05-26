@@ -54,7 +54,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 }
             }
 
-            codigoTranspiladoJava += linhaTranspilada + "\r\n";
+            codigoTranspiladoJava += linhaTranspilada + "\n";
             numeroLinha++;
         }
 
@@ -140,41 +140,146 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
         String linhaTranspilada = "\t";
+        String espacoEmBranco = "";
 
         char caracteres[] = conteudoLinha.toCharArray();
         for (var caracter : caracteres) {
             if (caracter == ' ') {
-                linhaTranspilada += " ";
+                espacoEmBranco += " ";
             } else {
                 break;
             }
         }
 
+        linhaTranspilada += espacoEmBranco;
+
         if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
-            linhaTranspilada = "\t}\r\n}";
+            linhaTranspilada = "\t}\n}";
         } else if (conteudoLinhaLimpa.startsWith("se")) {
-            int inicio = conteudoLinha.indexOf("(");
-            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            int fim = conteudoLinhaLimpa.indexOf(" entao");
 
-            String condicao = this.substituirCondicional(conteudoLinha.substring(inicio, fim));
+            String condicao = this.substituirComandos(conteudoLinhaLimpa.substring(inicio, fim));
 
-            linhaTranspilada += "if " + condicao + " {";
+            linhaTranspilada += "if (" + condicao + ") {";
         } else if (conteudoLinhaLimpa.startsWith("senao") || conteudoLinhaLimpa.startsWith("senão")) {
             linhaTranspilada += "} else {";
         } else if (conteudoLinhaLimpa.startsWith("fimse")) {
             linhaTranspilada += "}";
-        } else {
-            linhaTranspilada += conteudoLinha;
-        }
+        } else if (conteudoLinhaLimpa.startsWith("enquanto")) {
+            int inicio = conteudoLinha.indexOf("(");
+            int fim = conteudoLinha.lastIndexOf(")") + 1;
 
+            String condicao = this.substituirComandos(conteudoLinha.substring(inicio, fim));
+
+            linhaTranspilada += "while " + condicao + " {";
+        } else if (conteudoLinhaLimpa.startsWith("fimenquanto")) {
+            linhaTranspilada += "}";
+        } else if (conteudoLinhaLimpa.startsWith("para")) {
+            conteudoLinhaLimpa = conteudoLinhaLimpa.replace("até", "ate");
+
+            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            int fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
+            String variavel = conteudoLinhaLimpa.substring(inicio, fim).trim();
+
+            inicio = conteudoLinhaLimpa.indexOf(" de ") + 4;
+            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
+            String valor1 = conteudoLinhaLimpa.substring(inicio, fim).trim();
+
+            inicio = conteudoLinhaLimpa.indexOf(" ate ") + 5;
+            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
+            String valorN = conteudoLinhaLimpa.substring(inicio, fim).trim();
+
+            if (conteudoLinhaLimpa.contains(" passo ")) {
+                inicio = conteudoLinhaLimpa.indexOf(" passo ") + 7;
+                fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
+                String passo = conteudoLinhaLimpa.substring(inicio, fim).trim();
+
+                linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + " += " + passo + ") {";
+            } else {
+                linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + "++) {";
+            }
+        } else if (conteudoLinhaLimpa.startsWith("fimpara")) {
+            linhaTranspilada += "}";
+        } else if (conteudoLinhaLimpa.startsWith("escolha")) {
+            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            String variavel = conteudoLinhaLimpa.substring(inicio).trim();
+
+            linhaTranspilada += "switch (" + variavel + ") {";
+        } else if (conteudoLinhaLimpa.startsWith("caso")) {
+            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
+
+            linhaTranspilada = "";
+            for (var v : variaveis) {
+                linhaTranspilada += "\t" + espacoEmBranco + "case " + v.trim() + ":\n";
+            }
+
+            linhaTranspilada = linhaTranspilada.substring(0, linhaTranspilada.length() - 1);
+        } else if (conteudoLinhaLimpa.startsWith("outrocaso")) {
+            linhaTranspilada += "default:";
+        } else if (conteudoLinhaLimpa.startsWith("fimescolha")) {
+            linhaTranspilada += "}";
+        } else if (conteudoLinhaLimpa.startsWith("interrompa")) {
+            linhaTranspilada += "break;";
+        } else if (conteudoLinhaLimpa.startsWith("escreva")) {
+            int inicio = conteudoLinha.indexOf("(");
+            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
+
+            linhaTranspilada += "System.out.print" + conteudo + ";";
+        } else if (conteudoLinhaLimpa.startsWith("escreval")) {
+            int inicio = conteudoLinha.indexOf("(");
+            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
+
+            linhaTranspilada += "System.out.println" + conteudo + ";";
+        } else if (conteudoLinhaLimpa.startsWith("limpatela")) {
+            linhaTranspilada = "";
+        } else if (conteudoLinhaLimpa.startsWith("eco")) {
+            linhaTranspilada = "";
+        } else if (conteudoLinhaLimpa.startsWith("pausa")) {
+            linhaTranspilada = "";
+        } else {
+            int inicio;
+            int fim;
+            String aux;
+
+            while (conteudoLinha.contains("int(")) {
+                inicio = conteudoLinha.indexOf("int(") + 4;
+                fim = conteudoLinha.indexOf(")", inicio);
+                aux = conteudoLinha.substring(inicio, fim).trim();
+
+                conteudoLinha = conteudoLinha.replace("int(" + aux + ")", "(int) " + aux);
+            }
+
+            conteudoLinha = conteudoLinha.replace(":=", "=").replace("<-", "=").replace("verdadeiro", "true").replace("falso", "false");
+            conteudoLinha = conteudoLinha.replace("<>", "!=").replace("não", "!").replace(" mod ", " % ");
+
+            linhaTranspilada += conteudoLinha.trim() + ";";
+        }
+//
+//        } else if (conteudoLinhaLimpa.startsWith("repita")) {
+//            linhaTranspilada += "do {";
+//        } else if (conteudoLinhaLimpa.startsWith("ate") || conteudoLinhaLimpa.startsWith("até")) {
+//            int inicio = conteudoLinha.indexOf("(");
+//            int fim = conteudoLinha.lastIndexOf(")") + 1;
+//
+//            String condicao = this.substituirCondicional(conteudoLinha.substring(inicio, fim));
+//
+//            linhaTranspilada += "} while" + condicao + ";";
+//        } else if (conteudoLinhaLimpa.startsWith("fimrepita")) {
+//            linhaTranspilada += "} while(true);";
+//        } 
+//
         return linhaTranspilada;
     }
 
-    private String substituirCondicional(String condicao) {
-        condicao = condicao.replace("verdadeiro", "true").replace("falso", "false");
-        condicao = condicao.replace(" = ", " == ").replace("<>", "!=").replace(" e ", " && ").replace(" ou ", " || ").replace("não", "!").replace(" mod ", " % ");
+    private String substituirComandos(String comando) {
+        comando = comando.replace("verdadeiro", "true").replace("falso", "false");
+        comando = comando.replace(" = ", " == ").replace("<>", "!=").replace(" e ", " && ").replace(" ou ", " || ").replace("não", "!").replace(" mod ", " % ");
 
-        return condicao;
+        return comando;
     }
 
     @SuppressWarnings("unchecked")
@@ -336,7 +441,6 @@ public class JFPrincipal extends javax.swing.JFrame {
 
         jbTranspilar.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jbTranspilar.setText("Transpilar");
-        jbTranspilar.setEnabled(false);
         jbTranspilar.setFocusPainted(false);
         jbTranspilar.setFocusable(false);
         jbTranspilar.addActionListener(new java.awt.event.ActionListener() {
@@ -425,8 +529,6 @@ public class JFPrincipal extends javax.swing.JFrame {
             File selectedFile = jfc.getSelectedFile();
             jtfArquivo.setText(selectedFile.getAbsolutePath());
 
-            jbTranspilar.setEnabled(true);
-
             try {
                 String content = FileUtils.readFileToString(selectedFile, StandardCharsets.ISO_8859_1);
                 jtaCodigoVisualg.setText(content);
@@ -438,7 +540,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private void jbTranspilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTranspilarActionPerformed
         String codigo = jtaCodigoVisualg.getText();
-        String vetCodigoOriginal[] = codigo.split("\r\n");
+        String vetCodigoOriginal[] = codigo.split("\\n");
 
         String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal);
         String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
