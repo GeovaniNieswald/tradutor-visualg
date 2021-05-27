@@ -141,6 +141,9 @@ public class JFPrincipal extends javax.swing.JFrame {
     private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
         String linhaTranspilada = "\t";
         String espacoEmBranco = "";
+        int inicio;
+        int fim;
+        String aux;
 
         char caracteres[] = conteudoLinha.toCharArray();
         for (var caracter : caracteres) {
@@ -153,11 +156,48 @@ public class JFPrincipal extends javax.swing.JFrame {
 
         linhaTranspilada += espacoEmBranco;
 
+        while (conteudoLinha.contains("int(")) {
+            inicio = conteudoLinha.indexOf("int(") + 4;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("int(" + aux + ")", "(int) " + aux);
+        }
+        while (conteudoLinha.contains("maiusc(")) {
+            inicio = conteudoLinha.indexOf("maiusc(") + 7;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("maiusc(" + aux + ")", aux + ".toUpperCase()");
+        }
+        while (conteudoLinha.contains("minusc(")) {
+            inicio = conteudoLinha.indexOf("minusc(") + 7;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("minusc(" + aux + ")", aux + ".toLowerCase()");
+        }
+        while (conteudoLinha.contains("caracpnum(")) {
+            inicio = conteudoLinha.indexOf("caracpnum(") + 10;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("caracpnum(" + aux + ")", "Integer.parseInt(" + aux + ")");
+        }
+        while (conteudoLinha.contains("compr(")) {
+            inicio = conteudoLinha.indexOf("compr(") + 6;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("compr(" + aux + ")", aux + ".length()");
+        }
+        while (conteudoLinha.contains("numpcarac(")) {
+            inicio = conteudoLinha.indexOf("numpcarac(") + 10;
+            fim = conteudoLinha.indexOf(")", inicio);
+            aux = conteudoLinha.substring(inicio, fim).trim();
+            conteudoLinha = conteudoLinha.replace("numpcarac(" + aux + ")", "String.valueOf(" + aux + ")");
+        }
+
         if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
             linhaTranspilada = "\t}\n}";
         } else if (conteudoLinhaLimpa.startsWith("se")) {
-            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            int fim = conteudoLinhaLimpa.indexOf(" entao");
+            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            fim = conteudoLinhaLimpa.indexOf(" entao");
 
             String condicao = this.substituirComandos(conteudoLinhaLimpa.substring(inicio, fim));
 
@@ -167,8 +207,8 @@ public class JFPrincipal extends javax.swing.JFrame {
         } else if (conteudoLinhaLimpa.startsWith("fimse")) {
             linhaTranspilada += "}";
         } else if (conteudoLinhaLimpa.startsWith("enquanto")) {
-            int inicio = conteudoLinha.indexOf("(");
-            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            inicio = conteudoLinha.indexOf("(");
+            fim = conteudoLinha.lastIndexOf(")") + 1;
 
             String condicao = this.substituirComandos(conteudoLinha.substring(inicio, fim));
 
@@ -178,8 +218,8 @@ public class JFPrincipal extends javax.swing.JFrame {
         } else if (conteudoLinhaLimpa.startsWith("para")) {
             conteudoLinhaLimpa = conteudoLinhaLimpa.replace("até", "ate");
 
-            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            int fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
+            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
             String variavel = conteudoLinhaLimpa.substring(inicio, fim).trim();
 
             inicio = conteudoLinhaLimpa.indexOf(" de ") + 4;
@@ -202,12 +242,12 @@ public class JFPrincipal extends javax.swing.JFrame {
         } else if (conteudoLinhaLimpa.startsWith("fimpara")) {
             linhaTranspilada += "}";
         } else if (conteudoLinhaLimpa.startsWith("escolha")) {
-            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variavel = conteudoLinhaLimpa.substring(inicio).trim();
 
             linhaTranspilada += "switch (" + variavel + ") {";
         } else if (conteudoLinhaLimpa.startsWith("caso")) {
-            int inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
 
             linhaTranspilada = "";
@@ -223,36 +263,18 @@ public class JFPrincipal extends javax.swing.JFrame {
         } else if (conteudoLinhaLimpa.startsWith("interrompa")) {
             linhaTranspilada += "break;";
         } else if (conteudoLinhaLimpa.startsWith("escreva")) {
-            int inicio = conteudoLinha.indexOf("(");
-            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            inicio = conteudoLinha.indexOf("(");
+            fim = conteudoLinha.lastIndexOf(")") + 1;
             String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
 
             linhaTranspilada += "System.out.print" + conteudo + ";";
         } else if (conteudoLinhaLimpa.startsWith("escreval")) {
-            int inicio = conteudoLinha.indexOf("(");
-            int fim = conteudoLinha.lastIndexOf(")") + 1;
+            inicio = conteudoLinha.indexOf("(");
+            fim = conteudoLinha.lastIndexOf(")") + 1;
             String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
 
             linhaTranspilada += "System.out.println" + conteudo + ";";
-        } else if (conteudoLinhaLimpa.startsWith("limpatela")) {
-            linhaTranspilada = "";
-        } else if (conteudoLinhaLimpa.startsWith("eco")) {
-            linhaTranspilada = "";
-        } else if (conteudoLinhaLimpa.startsWith("pausa")) {
-            linhaTranspilada = "";
         } else {
-            int inicio;
-            int fim;
-            String aux;
-
-            while (conteudoLinha.contains("int(")) {
-                inicio = conteudoLinha.indexOf("int(") + 4;
-                fim = conteudoLinha.indexOf(")", inicio);
-                aux = conteudoLinha.substring(inicio, fim).trim();
-
-                conteudoLinha = conteudoLinha.replace("int(" + aux + ")", "(int) " + aux);
-            }
-
             conteudoLinha = conteudoLinha.replace(":=", "=").replace("<-", "=").replace("verdadeiro", "true").replace("falso", "false");
             conteudoLinha = conteudoLinha.replace("<>", "!=").replace("não", "!").replace(" mod ", " % ");
 
