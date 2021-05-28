@@ -1,8 +1,11 @@
 package com.acme.transpilador;
 
+import com.acme.transpilador.model.Token;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -12,8 +15,11 @@ import org.apache.commons.io.FileUtils;
 
 public class JFPrincipal extends javax.swing.JFrame {
 
+    private List<Token> tokens;
+
     public JFPrincipal() {
         initComponents();
+        this.popularArrayTokens();
     }
 
     private String transpilarParaJava(String vetCodigoOriginal[]) {
@@ -29,10 +35,12 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             if (numeroLinha == 0) {
                 String nomeClasse[] = conteudoLinha.split("\"");
-                linhaTranspilada = "public class " + nomeClasse[1].replace(" ", "") + " {";
+                linhaTranspilada = "public class " + this.primeiraLetraMaiuscula(this.removerCaracteresEspeciais(nomeClasse[1])) + " {";
+                this.incrementarQtdToken("algoritmo");
             } else {
                 if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
                     linhaTranspilada = "\t" + conteudoLinha;
+                    this.incrementarQtdToken("//");
                 } else {
                     if (blocoVar) {
                         blocoVar = !conteudoLinhaLimpa.startsWith("inicio");
@@ -41,12 +49,14 @@ public class JFPrincipal extends javax.swing.JFrame {
                             linhaTranspilada = this.substituirVariaveisJava(conteudoLinha);
                         } else {
                             linhaTranspilada = "\tpublic static void main(String args[]) {";
+                            this.incrementarQtdToken("inicio");
                         }
                     } else {
                         blocoVar = conteudoLinhaLimpa.startsWith("var");
 
                         if (blocoVar) {
                             linhaTranspilada = "";
+                            this.incrementarQtdToken("var");
                         } else {
                             linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
                         }
@@ -84,7 +94,12 @@ public class JFPrincipal extends javax.swing.JFrame {
             String tamanho = tamanhoTipoComentario[0].trim();
             tamanho = tamanho.replace(" ", "").replace("vetor", "").replace("[", "").replace("]", "");
             tipo = tipoComentario[0].trim();
-            String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
+            String comentario = "";
+
+            if (tipoComentario.length > 1) {
+                comentario = "//" + tipoComentario[1];
+                this.incrementarQtdToken("//");
+            }
 
             String tipoTranspilado = this.substituirTipoVariavelJava(tipo);
 
@@ -100,6 +115,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 int tamanhoVet = Integer.parseInt(tamanho.split("\\.\\.")[1]);
                 linhaTranspilada += tipoTranspilado + "[] " + nomes + " = new " + tipoTranspilado + "[" + tamanhoVet + "]; " + comentario;
             }
+            this.incrementarQtdToken("vetor");
         } else {
             String tipoComentario[] = tipo.split("//");
 
@@ -135,6 +151,8 @@ public class JFPrincipal extends javax.swing.JFrame {
                 break;
         }
 
+        this.incrementarQtdToken(tipoOrigem);
+
         return tipoDestino;
     }
 
@@ -161,40 +179,47 @@ public class JFPrincipal extends javax.swing.JFrame {
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("int(" + aux + ")", "(int) " + aux);
+            this.incrementarQtdToken("int");
         }
         while (conteudoLinha.contains("maiusc(")) {
             inicio = conteudoLinha.indexOf("maiusc(") + 7;
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("maiusc(" + aux + ")", aux + ".toUpperCase()");
+            this.incrementarQtdToken("maiusc");
         }
         while (conteudoLinha.contains("minusc(")) {
             inicio = conteudoLinha.indexOf("minusc(") + 7;
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("minusc(" + aux + ")", aux + ".toLowerCase()");
+            this.incrementarQtdToken("minusc");
         }
         while (conteudoLinha.contains("caracpnum(")) {
             inicio = conteudoLinha.indexOf("caracpnum(") + 10;
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("caracpnum(" + aux + ")", "Integer.parseInt(" + aux + ")");
+            this.incrementarQtdToken("caracpnum");
         }
         while (conteudoLinha.contains("compr(")) {
             inicio = conteudoLinha.indexOf("compr(") + 6;
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("compr(" + aux + ")", aux + ".length()");
+            this.incrementarQtdToken("compr");
         }
         while (conteudoLinha.contains("numpcarac(")) {
             inicio = conteudoLinha.indexOf("numpcarac(") + 10;
             fim = conteudoLinha.indexOf(")", inicio);
             aux = conteudoLinha.substring(inicio, fim).trim();
             conteudoLinha = conteudoLinha.replace("numpcarac(" + aux + ")", "String.valueOf(" + aux + ")");
+            this.incrementarQtdToken("numpcarac");
         }
 
         if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
             linhaTranspilada = "\t}\n}";
+            this.incrementarQtdToken("fimalgoritmo");
         } else if (conteudoLinhaLimpa.startsWith("se")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             fim = conteudoLinhaLimpa.indexOf(" entao");
@@ -202,10 +227,13 @@ public class JFPrincipal extends javax.swing.JFrame {
             String condicao = this.substituirComandos(conteudoLinhaLimpa.substring(inicio, fim));
 
             linhaTranspilada += "if (" + condicao + ") {";
+            this.incrementarQtdToken("se");
         } else if (conteudoLinhaLimpa.startsWith("senao") || conteudoLinhaLimpa.startsWith("senão")) {
             linhaTranspilada += "} else {";
+            this.incrementarQtdToken("senao");
         } else if (conteudoLinhaLimpa.startsWith("fimse")) {
             linhaTranspilada += "}";
+            this.incrementarQtdToken("fimse");
         } else if (conteudoLinhaLimpa.startsWith("enquanto")) {
             inicio = conteudoLinha.indexOf("(");
             fim = conteudoLinha.lastIndexOf(")") + 1;
@@ -213,8 +241,10 @@ public class JFPrincipal extends javax.swing.JFrame {
             String condicao = this.substituirComandos(conteudoLinha.substring(inicio, fim));
 
             linhaTranspilada += "while " + condicao + " {";
+            this.incrementarQtdToken("enquanto");
         } else if (conteudoLinhaLimpa.startsWith("fimenquanto")) {
             linhaTranspilada += "}";
+            this.incrementarQtdToken("fimenquanto");
         } else if (conteudoLinhaLimpa.startsWith("para")) {
             conteudoLinhaLimpa = conteudoLinhaLimpa.replace("até", "ate");
 
@@ -230,22 +260,29 @@ public class JFPrincipal extends javax.swing.JFrame {
             fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
             String valorN = conteudoLinhaLimpa.substring(inicio, fim).trim();
 
+            this.incrementarQtdToken("para");
+            this.incrementarQtdToken("ate");
+
             if (conteudoLinhaLimpa.contains(" passo ")) {
                 inicio = conteudoLinhaLimpa.indexOf(" passo ") + 7;
                 fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
                 String passo = conteudoLinhaLimpa.substring(inicio, fim).trim();
 
                 linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + " += " + passo + ") {";
+                this.incrementarQtdToken("passo");
             } else {
                 linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + "++) {";
             }
+            this.incrementarQtdToken("faca");
         } else if (conteudoLinhaLimpa.startsWith("fimpara")) {
             linhaTranspilada += "}";
+            this.incrementarQtdToken("fimpara");
         } else if (conteudoLinhaLimpa.startsWith("escolha")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variavel = conteudoLinhaLimpa.substring(inicio).trim();
 
             linhaTranspilada += "switch (" + variavel + ") {";
+            this.incrementarQtdToken("escolha");
         } else if (conteudoLinhaLimpa.startsWith("caso")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
@@ -256,52 +293,257 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
 
             linhaTranspilada = linhaTranspilada.substring(0, linhaTranspilada.length() - 1);
+            this.incrementarQtdToken("caso");
         } else if (conteudoLinhaLimpa.startsWith("outrocaso")) {
             linhaTranspilada += "default:";
+            this.incrementarQtdToken("outrocaso");
         } else if (conteudoLinhaLimpa.startsWith("fimescolha")) {
             linhaTranspilada += "}";
+            this.incrementarQtdToken("fimescolha");
         } else if (conteudoLinhaLimpa.startsWith("interrompa")) {
             linhaTranspilada += "break;";
-        } else if (conteudoLinhaLimpa.startsWith("escreva")) {
-            inicio = conteudoLinha.indexOf("(");
-            fim = conteudoLinha.lastIndexOf(")") + 1;
-            String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
-
-            linhaTranspilada += "System.out.print" + conteudo + ";";
+            this.incrementarQtdToken("interrompa");
         } else if (conteudoLinhaLimpa.startsWith("escreval")) {
             inicio = conteudoLinha.indexOf("(");
             fim = conteudoLinha.lastIndexOf(")") + 1;
             String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
 
             linhaTranspilada += "System.out.println" + conteudo + ";";
+            this.incrementarQtdToken("escreval");
+        } else if (conteudoLinhaLimpa.startsWith("escreva")) {
+            inicio = conteudoLinha.indexOf("(");
+            fim = conteudoLinha.lastIndexOf(")") + 1;
+            String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
+
+            linhaTranspilada += "System.out.print" + conteudo + ";";
+            this.incrementarQtdToken("escreva");
         } else {
-            conteudoLinha = conteudoLinha.replace(":=", "=").replace("<-", "=").replace("verdadeiro", "true").replace("falso", "false");
-            conteudoLinha = conteudoLinha.replace("<>", "!=").replace("não", "!").replace(" mod ", " % ");
+            if (conteudoLinhaLimpa.contains(":=")) {
+                conteudoLinha = conteudoLinha.replace(":=", "=");
+                this.incrementarQtdToken(":=");
+            }
+            if (conteudoLinhaLimpa.contains("<-")) {
+                conteudoLinha = conteudoLinha.replace("<-", "=");
+                this.incrementarQtdToken("<-");
+            }
+            if (conteudoLinhaLimpa.contains("verdadeiro")) {
+                conteudoLinha = conteudoLinha.replace("verdadeiro", "true");
+                this.incrementarQtdToken("verdadeiro");
+            }
+            if (conteudoLinhaLimpa.contains("falso")) {
+                conteudoLinha = conteudoLinha.replace("falso", "false");
+                this.incrementarQtdToken("falso");
+            }
+            if (conteudoLinhaLimpa.contains("<>")) {
+                conteudoLinha = conteudoLinha.replace("<>", "!=");
+                this.incrementarQtdToken("<>");
+            }
+            if (conteudoLinhaLimpa.contains("não") || conteudoLinhaLimpa.contains("nao")) {
+                conteudoLinha = conteudoLinha.replace("nao", "!").replace("não", "!");
+                this.incrementarQtdToken("nao");
+            }
+            if (conteudoLinhaLimpa.contains(" mod ")) {
+                conteudoLinha = conteudoLinha.replace(" mod ", " % ");
+                this.incrementarQtdToken("mod");
+            }
 
             linhaTranspilada += conteudoLinha.trim() + ";";
         }
-//
-//        } else if (conteudoLinhaLimpa.startsWith("repita")) {
-//            linhaTranspilada += "do {";
-//        } else if (conteudoLinhaLimpa.startsWith("ate") || conteudoLinhaLimpa.startsWith("até")) {
-//            int inicio = conteudoLinha.indexOf("(");
-//            int fim = conteudoLinha.lastIndexOf(")") + 1;
-//
-//            String condicao = this.substituirCondicional(conteudoLinha.substring(inicio, fim));
-//
-//            linhaTranspilada += "} while" + condicao + ";";
-//        } else if (conteudoLinhaLimpa.startsWith("fimrepita")) {
-//            linhaTranspilada += "} while(true);";
-//        } 
-//
+
         return linhaTranspilada;
     }
 
     private String substituirComandos(String comando) {
-        comando = comando.replace("verdadeiro", "true").replace("falso", "false");
-        comando = comando.replace(" = ", " == ").replace("<>", "!=").replace(" e ", " && ").replace(" ou ", " || ").replace("não", "!").replace(" mod ", " % ");
+        if (comando.contains("verdadeiro")) {
+            comando = comando.replace("verdadeiro", "true");
+            this.incrementarQtdToken("verdadeiro");
+        }
+        if (comando.contains("falso")) {
+            comando = comando.replace("falso", "false");
+            this.incrementarQtdToken("falso");
+        }
+        if (comando.contains(" = ")) {
+            comando = comando.replace(" = ", " == ");
+            this.incrementarQtdToken("=");
+        }
+        if (comando.contains("<>")) {
+            comando = comando.replace("<>", "!=");
+            this.incrementarQtdToken("<>");
+        }
+        if (comando.contains(" e ")) {
+            comando = comando.replace(" e ", " && ");
+            this.incrementarQtdToken("e");
+        }
+        if (comando.contains(" ou ")) {
+            comando = comando.replace(" ou ", " || ");
+            this.incrementarQtdToken("ou");
+        }
+        if (comando.contains(" não ") || comando.contains(" nao ")) {
+            comando = comando.replace(" nao ", "!").replace(" não ", "!");
+            this.incrementarQtdToken("nao");
+        }
+        if (comando.contains(" mod ")) {
+            comando = comando.replace(" mod ", " % ");
+            this.incrementarQtdToken("mod");
+        }
 
         return comando;
+    }
+
+    private String removerCaracteresEspeciais(String str) {
+        return str.replaceAll("[^a-zZ-Z0-9]", "");
+    }
+
+    private String primeiraLetraMaiuscula(String str) {
+        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+    }
+
+    private void incrementarQtdToken(String token) {
+        for (Token t : tokens) {
+            if (t.getTokenVisualg().equalsIgnoreCase(token)) {
+                t.setQtd(t.getQtd() + 1);
+                break;
+            }
+        }
+    }
+
+    private void popularArrayTokens() {
+        this.tokens = new ArrayList<>();
+
+        Token t = new Token("//", "//", 0);
+        this.tokens.add(t);
+
+        t = new Token("algoritmo", "public class", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimalgoritmo", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("var", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("inteiro", "int", 0);
+        this.tokens.add(t);
+
+        t = new Token("vetor", "[]", 0);
+        this.tokens.add(t);
+
+        t = new Token("real", "double", 0);
+        this.tokens.add(t);
+
+        t = new Token("caractere", "String", 0);
+        this.tokens.add(t);
+
+        t = new Token("logico", "boolean", 0);
+        this.tokens.add(t);
+
+        t = new Token("inicio", "public static void main(String args[])", 0);
+        this.tokens.add(t);
+
+        t = new Token("se", "if", 0);
+        this.tokens.add(t);
+
+        t = new Token("entao", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("senao", "else", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimse", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("enquanto", "while", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimenquanto", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("para", "for", 0);
+        this.tokens.add(t);
+
+        t = new Token("ate", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("passo", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("faca", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimpara", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("escolha", "switch", 0);
+        this.tokens.add(t);
+
+        t = new Token("caso", "case", 0);
+        this.tokens.add(t);
+
+        t = new Token("outrocaso", "default", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimescolha", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("interrompa", "break", 0);
+        this.tokens.add(t);
+
+        t = new Token("escreval", "System.out.println()", 0);
+        this.tokens.add(t);
+
+        t = new Token("escreva", "System.out.print()", 0);
+        this.tokens.add(t);
+
+        t = new Token("int", "(int)", 0);
+        this.tokens.add(t);
+
+        t = new Token("maiusc", ".toUpperCase()", 0);
+        this.tokens.add(t);
+
+        t = new Token("minusc", ".toLowerCase()", 0);
+        this.tokens.add(t);
+
+        t = new Token("caracpnum", "Integer.parseInt()", 0);
+        this.tokens.add(t);
+
+        t = new Token("compr", ".length()", 0);
+        this.tokens.add(t);
+
+        t = new Token("numpcarac", "String.valueOf()", 0);
+        this.tokens.add(t);
+
+        t = new Token("nao", "!", 0);
+        this.tokens.add(t);
+
+        t = new Token("falso", "false", 0);
+        this.tokens.add(t);
+
+        t = new Token("verdadeiro", "true", 0);
+        this.tokens.add(t);
+
+        t = new Token("mod", "%", 0);
+        this.tokens.add(t);
+
+        t = new Token("e", "&&", 0);
+        this.tokens.add(t);
+
+        t = new Token("ou", "||", 0);
+        this.tokens.add(t);
+
+        t = new Token("=", "==", 0);
+        this.tokens.add(t);
+
+        t = new Token("<>", "!=", 0);
+        this.tokens.add(t);
+
+        t = new Token(":=", "=", 0);
+        this.tokens.add(t);
+
+        t = new Token("<-", "=", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimalgoritmo", "sem correspondência", 0);
+        this.tokens.add(t);
     }
 
     @SuppressWarnings("unchecked")
@@ -562,19 +804,18 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private void jbTranspilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTranspilarActionPerformed
         String codigo = jtaCodigoVisualg.getText();
-        String vetCodigoOriginal[] = codigo.split("\\n");
 
-        String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal);
-        String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
+        if (!codigo.trim().isEmpty()) {
+            String vetCodigoOriginal[] = codigo.split("\\n");
 
-        System.out.println("Código JAVA: ");
-        System.out.println(codigoTranspiladoJava);
-        System.out.println("");
-        System.out.println("Código PHP: ");
-        System.out.println(codigoTranspiladoPHP);
+            String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal);
+            String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
 
-        jtaCodigoJava.setText(codigoTranspiladoJava);
-        jtaCodigoPHP.setText(codigoTranspiladoPHP);
+            jtaCodigoJava.setText(codigoTranspiladoJava);
+            jtaCodigoPHP.setText(codigoTranspiladoPHP);
+
+            jbMostrarTabela.setEnabled(true);
+        }
     }//GEN-LAST:event_jbTranspilarActionPerformed
 
     private void jbSalvarJavaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarJavaActionPerformed
@@ -586,7 +827,8 @@ public class JFPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jbSalvarPHPActionPerformed
 
     private void jbMostrarTabelaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbMostrarTabelaActionPerformed
-        // TODO add your handling code here:
+        JFTabelaTokens frame = new JFTabelaTokens(tokens);
+        frame.setVisible(true);
     }//GEN-LAST:event_jbMostrarTabelaActionPerformed
 
     public static void main(String args[]) {
