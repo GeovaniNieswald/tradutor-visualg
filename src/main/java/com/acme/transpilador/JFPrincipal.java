@@ -1,7 +1,9 @@
 package com.acme.transpilador;
 
 import com.acme.transpilador.model.Token;
+import com.acme.transpilador.model.Variavel;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -9,21 +11,23 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 import org.apache.commons.io.FileUtils;
 
 public class JFPrincipal extends javax.swing.JFrame {
 
+    private List<Variavel> variaveis;
     private List<Token> tokens;
+    private String classe;
 
     public JFPrincipal() {
         initComponents();
-        this.popularArrayTokens();
     }
 
-    private String transpilarParaJava(String vetCodigoOriginal[]) {
-        String codigoTranspiladoJava = "";
+    private String transpilarParaJava(String vetCodigoOriginal[], boolean leDados) {
+        String codigoTranspiladoJava = leDados ? "import java.util.Scanner;\n\n" : "";
 
         int numeroLinha = 0;
         boolean blocoVar = false;
@@ -35,7 +39,8 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             if (numeroLinha == 0) {
                 String nomeClasse[] = conteudoLinha.split("\"");
-                linhaTranspilada = "public class " + this.primeiraLetraMaiuscula(this.removerCaracteresEspeciais(nomeClasse[1])) + " {";
+                this.classe = this.primeiraLetraMaiuscula(this.removerCaracteresEspeciais(nomeClasse[1]));
+                linhaTranspilada = "public class " + this.classe + " {";
                 this.incrementarQtdToken("algoritmo");
             } else {
                 if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
@@ -49,6 +54,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                             linhaTranspilada = this.substituirVariaveisJava(conteudoLinha);
                         } else {
                             linhaTranspilada = "\tpublic static void main(String args[]) {";
+                            linhaTranspilada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
                             this.incrementarQtdToken("inicio");
                         }
                     } else {
@@ -84,6 +90,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
         String nomes = nomesTipo[0].trim().toLowerCase().trim();
         String tipo = nomesTipo[1].trim().toLowerCase().trim();
+        String tipoTranspilado;
 
         String linhaTranspilada = "\tprivate static ";
 
@@ -101,7 +108,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 this.incrementarQtdToken("//");
             }
 
-            String tipoTranspilado = this.substituirTipoVariavelJava(tipo);
+            tipoTranspilado = this.substituirTipoVariavelJava(tipo);
 
             boolean ehMatriz = tamanho.contains(",");
 
@@ -120,10 +127,18 @@ public class JFPrincipal extends javax.swing.JFrame {
             String tipoComentario[] = tipo.split("//");
 
             tipo = tipoComentario[0].trim();
+            tipoTranspilado = this.substituirTipoVariavelJava(tipo);
             String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
 
-            linhaTranspilada += this.substituirTipoVariavelJava(tipo);
+            linhaTranspilada += tipoTranspilado;
             linhaTranspilada += " " + nomes + "; " + comentario;
+        }
+
+        Variavel v;
+        String nomesVar[] = nomes.split(",");
+        for (String var : nomesVar) {
+            v = new Variavel(var.trim(), tipoTranspilado);
+            this.variaveis.add(v);
         }
 
         return linhaTranspilada;
@@ -317,6 +332,44 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             linhaTranspilada += "System.out.print" + conteudo + ";";
             this.incrementarQtdToken("escreva");
+        } else if (conteudoLinhaLimpa.startsWith("leia(")) {
+            inicio = conteudoLinha.indexOf("(") + 1;
+
+            String variavel;
+            String variavelCompleta;
+
+            if (conteudoLinha.contains("[")) {
+                fim = conteudoLinha.lastIndexOf("[");
+                variavel = conteudoLinha.substring(inicio, fim).trim();
+                fim = conteudoLinha.lastIndexOf("]") + 1;
+                variavelCompleta = conteudoLinha.substring(inicio, fim).trim();
+            } else {
+                fim = conteudoLinha.lastIndexOf(")");
+                variavel = conteudoLinha.substring(inicio, fim).trim();
+                variavelCompleta = conteudoLinha.substring(inicio, fim).trim();
+            }
+
+            String tipoVariavel = this.qualTipoVariavel(variavel);
+
+            switch (tipoVariavel) {
+                case "int":
+                    linhaTranspilada += variavelCompleta + " = Integer.parseInt(scan.nextLine());";
+                    break;
+                case "double":
+                    linhaTranspilada += variavelCompleta + " = Double.parseDouble(scan.nextLine());";
+                    break;
+                case "String":
+                    linhaTranspilada += variavelCompleta + " = scan.nextLine();";
+                    break;
+                case "boolean":
+                    linhaTranspilada += variavelCompleta + " = Boolean.parseBoolean(scan.nextLine());";
+                    break;
+                default:
+                    linhaTranspilada += variavelCompleta + " = scan.nextLine();";
+                    break;
+            }
+
+            this.incrementarQtdToken("leia");
         } else {
             if (conteudoLinhaLimpa.contains(":=")) {
                 conteudoLinha = conteudoLinha.replace(":=", "=");
@@ -351,6 +404,18 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
 
         return linhaTranspilada;
+    }
+
+    private String qualTipoVariavel(String variavel) {
+        String tipoVariavel = "";
+
+        for (Variavel v : variaveis) {
+            if (v.getNome().equalsIgnoreCase(variavel)) {
+                return v.getTipo();
+            }
+        }
+
+        return tipoVariavel;
     }
 
     private String substituirComandos(String comando) {
@@ -543,6 +608,9 @@ public class JFPrincipal extends javax.swing.JFrame {
         this.tokens.add(t);
 
         t = new Token("fimalgoritmo", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("leia", "new Scanner(System.in).nextLine()", 0);
         this.tokens.add(t);
     }
 
@@ -787,7 +855,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Algoritmo Visualg", "alg", "ALG");
         jfc.addChoosableFileFilter(filter);
 
-        int returnValue = jfc.showDialog(null, "Selecionar");
+        int returnValue = jfc.showDialog(this, "Selecionar");
 
         if (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = jfc.getSelectedFile();
@@ -803,23 +871,60 @@ public class JFPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jbSelecionarArquivoActionPerformed
 
     private void jbTranspilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTranspilarActionPerformed
+        this.variaveis = new ArrayList<>();
+        this.popularArrayTokens();
+
         String codigo = jtaCodigoVisualg.getText();
 
         if (!codigo.trim().isEmpty()) {
+            boolean leDados = codigo.contains("leia(");
             String vetCodigoOriginal[] = codigo.split("\\n");
 
-            String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal);
+            String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal, leDados);
             String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
 
             jtaCodigoJava.setText(codigoTranspiladoJava);
             jtaCodigoPHP.setText(codigoTranspiladoPHP);
 
             jbMostrarTabela.setEnabled(true);
+            jbSalvarJava.setEnabled(true);
         }
     }//GEN-LAST:event_jbTranspilarActionPerformed
 
     private void jbSalvarJavaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarJavaActionPerformed
-        // TODO add your handling code here:
+        String codigoJava = jtaCodigoJava.getText();
+
+        if (!codigoJava.trim().isEmpty()) {
+            String arquivo = this.classe + ".java";
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Java", "java");
+
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Selecione um local para salvar");
+            fileChooser.setSelectedFile(new File(arquivo));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setMultiSelectionEnabled(false);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(filter);
+
+            int userSelection = fileChooser.showSaveDialog(this);
+
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = fileChooser.getSelectedFile();
+
+                try {
+                    try (FileOutputStream outputStream = new FileOutputStream(fileToSave)) {
+                        byte[] strToBytes = codigoJava.getBytes();
+                        outputStream.write(strToBytes);
+                    }
+
+                    JOptionPane.showMessageDialog(this, "Arquivo salvo com sucesso", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(this, "Erro ao salvar arquivo", "Erro", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+        }
     }//GEN-LAST:event_jbSalvarJavaActionPerformed
 
     private void jbSalvarPHPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarPHPActionPerformed
