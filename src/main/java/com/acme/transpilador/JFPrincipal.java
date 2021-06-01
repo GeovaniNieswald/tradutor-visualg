@@ -31,6 +31,8 @@ public class JFPrincipal extends javax.swing.JFrame {
 
         int numeroLinha = 0;
         boolean blocoVar = false;
+        boolean blocoProcedimento = false;
+        boolean blocoFuncao = false;
         String conteudoLinhaLimpa;
         String linhaTranspilada;
 
@@ -47,25 +49,47 @@ public class JFPrincipal extends javax.swing.JFrame {
                     linhaTranspilada = "\t" + conteudoLinha;
                     this.incrementarQtdToken("//");
                 } else {
-                    if (blocoVar) {
-                        blocoVar = !conteudoLinhaLimpa.startsWith("inicio");
+                    if (conteudoLinhaLimpa.startsWith("var") && blocoProcedimento == false && blocoFuncao == false) {
+                        blocoVar = true;
+                        linhaTranspilada = "";
+                        this.incrementarQtdToken("var");
+                    } else if (conteudoLinhaLimpa.startsWith("inicio") && blocoProcedimento == false && blocoFuncao == false) {
+                        blocoVar = false;
+                        linhaTranspilada = "\tpublic static void main(String args[]) {";
+                        linhaTranspilada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
+                        this.incrementarQtdToken("inicio");
+                    } else if (conteudoLinhaLimpa.startsWith("procedimento ")) {
+                        blocoVar = false;
+                        blocoProcedimento = true;
 
-                        if (blocoVar) {
-                            linhaTranspilada = this.substituirVariaveisJava(conteudoLinha);
-                        } else {
-                            linhaTranspilada = "\tpublic static void main(String args[]) {";
-                            linhaTranspilada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
-                            this.incrementarQtdToken("inicio");
-                        }
+                        // TODO: Transpilar primeira linha do procedimento
+                        linhaTranspilada = "\tstatic void ";
+
+                        this.incrementarQtdToken("procedimento");
+                    } else if (conteudoLinhaLimpa.startsWith("funcao ") || conteudoLinhaLimpa.startsWith("função ")) {
+                        blocoVar = false;
+                        blocoFuncao = true;
+
+                        // TODO: Transpilar primeira linha da função
+                        linhaTranspilada = "\tstatic ";
+
+                        this.incrementarQtdToken("funcao");
+                    } else if (conteudoLinhaLimpa.startsWith("fimprocedimento")) {
+                        blocoProcedimento = false;
+                        linhaTranspilada = "\t}";
+                        this.incrementarQtdToken("fimprocedimento");
+                    } else if (conteudoLinhaLimpa.startsWith("fimfuncao") || conteudoLinhaLimpa.startsWith("fimfunção")) {
+                        blocoFuncao = false;
+                        linhaTranspilada = "\t}";
+                        this.incrementarQtdToken("fimfuncao");
+                    } else if (blocoVar) {
+                        linhaTranspilada = this.substituirVariaveisJava(conteudoLinha);
+                    } else if (blocoProcedimento) {
+                        linhaTranspilada = this.substituirProcedimentoJava(conteudoLinha);
+                    } else if (blocoFuncao) {
+                        linhaTranspilada = this.substituirFuncaoJava(conteudoLinha);
                     } else {
-                        blocoVar = conteudoLinhaLimpa.startsWith("var");
-
-                        if (blocoVar) {
-                            linhaTranspilada = "";
-                            this.incrementarQtdToken("var");
-                        } else {
-                            linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
-                        }
+                        linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
                     }
                 }
             }
@@ -79,9 +103,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private String transpilarParaPHP(String vetCodigoOriginal[]) {
         String codigoTranspiladoPHP = "";
-        //
         // TODO: Fazer transpilação para PHP
-        //
         return codigoTranspiladoPHP;
     }
 
@@ -171,6 +193,18 @@ public class JFPrincipal extends javax.swing.JFrame {
         return tipoDestino;
     }
 
+    private String substituirProcedimentoJava(String conteudoLinha) {
+        String linhaTranspilada = "\t";
+        // TODO: Transpilar bloco Procedimento
+        return linhaTranspilada;
+    }
+
+    private String substituirFuncaoJava(String conteudoLinha) {
+        String linhaTranspilada = "\t";
+        // TODO: Transpilar bloco Função
+        return linhaTranspilada;
+    }
+
     private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
         String linhaTranspilada = "\t";
         String espacoEmBranco = "";
@@ -235,7 +269,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
             linhaTranspilada = "\t}\n}";
             this.incrementarQtdToken("fimalgoritmo");
-        } else if (conteudoLinhaLimpa.startsWith("se")) {
+        } else if (conteudoLinhaLimpa.startsWith("se ")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             fim = conteudoLinhaLimpa.indexOf(" entao");
 
@@ -427,8 +461,8 @@ public class JFPrincipal extends javax.swing.JFrame {
             comando = comando.replace("falso", "false");
             this.incrementarQtdToken("falso");
         }
-        if (comando.contains(" = ")) {
-            comando = comando.replace(" = ", " == ");
+        if (comando.contains("=")) {
+            comando = comando.replace("=", "==");
             this.incrementarQtdToken("=");
         }
         if (comando.contains("<>")) {
@@ -611,6 +645,18 @@ public class JFPrincipal extends javax.swing.JFrame {
         this.tokens.add(t);
 
         t = new Token("leia", "new Scanner(System.in).nextLine()", 0);
+        this.tokens.add(t);
+
+        t = new Token("procedimento", "static void nome(tipo parâmetro, ...)", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimprocedimento", "sem correspondência", 0);
+        this.tokens.add(t);
+
+        t = new Token("funcao", "static tipo nome(tipo parâmetro, ...)", 0);
+        this.tokens.add(t);
+
+        t = new Token("fimfuncao", "sem correspondência", 0);
         this.tokens.add(t);
     }
 
