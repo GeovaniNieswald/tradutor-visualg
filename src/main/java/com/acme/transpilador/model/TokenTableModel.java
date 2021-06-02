@@ -6,7 +6,7 @@ import javax.swing.table.AbstractTableModel;
 
 public class TokenTableModel extends AbstractTableModel {
 
-    private final String[] colunas = new String[]{"Token Visualg", "Token Java", "Quantidade"};
+    private final String[] colunas = new String[]{"Token Visualg", "Token Java", "Qtd Visualg", "Qtd Java"};
     private List<Token> linhas = new ArrayList<>();
 
     @Override
@@ -34,7 +34,9 @@ public class TokenTableModel extends AbstractTableModel {
             case 1:
                 return t.getTokenJava();
             case 2:
-                return t.getQtd();
+                return t.getQtdVisualg();
+            case 3:
+                return t.getQtdJava();
             default:
                 throw new ArrayIndexOutOfBoundsException("Coluna " + columnIndex + " não existe");
         }
