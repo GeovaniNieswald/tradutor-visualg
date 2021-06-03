@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <groupId>com.acme</groupId>
-    <artifactId>Transpilador</artifactId>
+    <artifactId>TradutorVisualg</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
     
@@ -33,7 +33,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.acme.transpilador.JFPrincipal</mainClass>
+                            <mainClass>com.acme.tradutor.JFPrincipal</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -50,5 +50,5 @@
             </plugin>
         </plugins>
     </build>
-   
+    <name>TradutorVisualg</name>
 </project>

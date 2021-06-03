@@ -1,7 +1,7 @@
-package com.acme.transpilador;
+package com.acme.tradutor;
 
-import com.acme.transpilador.model.Token;
-import com.acme.transpilador.model.Variavel;
+import com.acme.tradutor.model.Token;
+import com.acme.tradutor.model.Variavel;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -29,15 +29,15 @@ public class JFPrincipal extends javax.swing.JFrame {
         this.blocoVarExtra = false;
     }
 
-    private String transpilarParaJava(String vetCodigoOriginal[], boolean leDados) {
-        String codigoTranspiladoJava = leDados ? "import java.util.Scanner;\n\n" : "";
+    private String traduzirParaJava(String vetCodigoOriginal[], boolean leDados) {
+        String codigoTraduzidoJava = leDados ? "import java.util.Scanner;\n\n" : "";
 
         int numeroLinha = 0;
         boolean blocoVar = false;
         boolean blocoProcedimento = false;
         boolean blocoFuncao = false;
         String conteudoLinhaLimpa;
-        String linhaTranspilada;
+        String linhaTraduziada;
 
         int inicio;
         int fim;
@@ -48,21 +48,21 @@ public class JFPrincipal extends javax.swing.JFrame {
             if (numeroLinha == 0) {
                 String nomeClasse[] = conteudoLinha.split("\"");
                 this.classe = this.primeiraLetraMaiuscula(this.removerCaracteresEspeciais(nomeClasse[1]));
-                linhaTranspilada = "public class " + this.classe + " {";
+                linhaTraduziada = "public class " + this.classe + " {";
                 this.incrementarQtdToken("algoritmo", true, true, false);
             } else {
                 if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-                    linhaTranspilada = "\t" + conteudoLinha;
+                    linhaTraduziada = "\t" + conteudoLinha;
                     this.incrementarQtdToken("//", true, true, false);
                 } else {
                     if (conteudoLinhaLimpa.startsWith("var") && blocoProcedimento == false && blocoFuncao == false) {
                         blocoVar = true;
-                        linhaTranspilada = "";
+                        linhaTraduziada = "";
                         this.incrementarQtdToken("var", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("inicio") && blocoProcedimento == false && blocoFuncao == false) {
                         blocoVar = false;
-                        linhaTranspilada = "\tpublic static void main(String args[]) {";
-                        linhaTranspilada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
+                        linhaTraduziada = "\tpublic static void main(String args[]) {";
+                        linhaTraduziada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
                         this.incrementarQtdToken("inicio", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("procedimento ")) {
                         blocoVar = false;
@@ -99,7 +99,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                             }
                         }
 
-                        linhaTranspilada = "\tprivate static void " + nomeProcedimento + "(" + parametrosProcedimento + ") {";
+                        linhaTraduziada = "\tprivate static void " + nomeProcedimento + "(" + parametrosProcedimento + ") {";
 
                         this.incrementarQtdToken("procedimento", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("funcao ") || conteudoLinhaLimpa.startsWith("função ")) {
@@ -139,40 +139,40 @@ public class JFPrincipal extends javax.swing.JFrame {
                             }
                         }
 
-                        linhaTranspilada = "\tprivate static " + tipoRetorno + " " + nomeFuncao + "(" + parametrosFuncao + ") {";
+                        linhaTraduziada = "\tprivate static " + tipoRetorno + " " + nomeFuncao + "(" + parametrosFuncao + ") {";
 
                         this.incrementarQtdToken("funcao", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("fimprocedimento")) {
                         blocoProcedimento = false;
-                        linhaTranspilada = "\t}";
+                        linhaTraduziada = "\t}";
                         this.incrementarQtdToken("fimprocedimento", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("fimfuncao") || conteudoLinhaLimpa.startsWith("fimfunção")) {
                         blocoFuncao = false;
-                        linhaTranspilada = "\t}";
+                        linhaTraduziada = "\t}";
                         this.incrementarQtdToken("fimfuncao", true, true, false);
                     } else if (blocoVar) {
-                        linhaTranspilada = this.substituirVariaveisJava(conteudoLinha, false);
+                        linhaTraduziada = this.substituirVariaveisJava(conteudoLinha, false);
                     } else if (blocoProcedimento) {
-                        linhaTranspilada = this.substituirProcedimentoJava(conteudoLinha, conteudoLinhaLimpa);
+                        linhaTraduziada = this.substituirProcedimentoJava(conteudoLinha, conteudoLinhaLimpa);
                     } else if (blocoFuncao) {
-                        linhaTranspilada = this.substituirFuncaoJava(conteudoLinha, conteudoLinhaLimpa);
+                        linhaTraduziada = this.substituirFuncaoJava(conteudoLinha, conteudoLinhaLimpa);
                     } else {
-                        linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
+                        linhaTraduziada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
                     }
                 }
             }
 
-            codigoTranspiladoJava += linhaTranspilada + "\n";
+            codigoTraduzidoJava += linhaTraduziada + "\n";
             numeroLinha++;
         }
 
-        return codigoTranspiladoJava;
+        return codigoTraduzidoJava;
     }
 
-    private String transpilarParaPHP(String vetCodigoOriginal[]) {
-        String codigoTranspiladoPHP = "";
-        // TODO: Fazer transpilação para PHP
-        return codigoTranspiladoPHP;
+    private String traduzirParaPHP(String vetCodigoOriginal[]) {
+        String codigoTraduzidoPHP = "";
+        // TODO: Fazer tradução para PHP
+        return codigoTraduzidoPHP;
     }
 
     private String substituirVariaveisJava(String conteudoLinha, boolean procedimentoFuncao) {
@@ -180,9 +180,9 @@ public class JFPrincipal extends javax.swing.JFrame {
 
         String nomes = nomesTipo[0].trim().toLowerCase().trim();
         String tipo = nomesTipo[1].trim().toLowerCase().trim();
-        String tipoTranspilado;
+        String tipoTraduzido;
 
-        String linhaTranspilada = procedimentoFuncao ? "\t" : "\tprivate static ";
+        String linhaTraduzida = procedimentoFuncao ? "\t" : "\tprivate static ";
 
         if (tipo.startsWith("vetor")) {
             String tamanhoTipoComentario[] = tipo.split(" de ");
@@ -198,7 +198,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 this.incrementarQtdToken("//", true, true, false);
             }
 
-            tipoTranspilado = this.substituirTipoVariavelJava(tipo);
+            tipoTraduzido = this.substituirTipoVariavelJava(tipo);
 
             boolean ehMatriz = tamanho.contains(",");
 
@@ -207,31 +207,31 @@ public class JFPrincipal extends javax.swing.JFrame {
                 int tamanhoMat1 = Integer.parseInt(tamanhoMatriz[0].split("\\.\\.")[1]);
                 int tamanhoMat2 = Integer.parseInt(tamanhoMatriz[1].split("\\.\\.")[1]);
 
-                linhaTranspilada += tipoTranspilado + "[][] " + nomes + " = new " + tipoTranspilado + "[" + tamanhoMat1 + "]" + "[" + tamanhoMat2 + "]; " + comentario;
+                linhaTraduzida += tipoTraduzido + "[][] " + nomes + " = new " + tipoTraduzido + "[" + tamanhoMat1 + "]" + "[" + tamanhoMat2 + "]; " + comentario;
             } else {
                 int tamanhoVet = Integer.parseInt(tamanho.split("\\.\\.")[1]);
-                linhaTranspilada += tipoTranspilado + "[] " + nomes + " = new " + tipoTranspilado + "[" + tamanhoVet + "]; " + comentario;
+                linhaTraduzida += tipoTraduzido + "[] " + nomes + " = new " + tipoTraduzido + "[" + tamanhoVet + "]; " + comentario;
             }
             this.incrementarQtdToken("vetor", true, true, false);
         } else {
             String tipoComentario[] = tipo.split("//");
 
             tipo = tipoComentario[0].trim();
-            tipoTranspilado = this.substituirTipoVariavelJava(tipo);
+            tipoTraduzido = this.substituirTipoVariavelJava(tipo);
             String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
 
-            linhaTranspilada += tipoTranspilado;
-            linhaTranspilada += " " + nomes + "; " + comentario;
+            linhaTraduzida += tipoTraduzido;
+            linhaTraduzida += " " + nomes + "; " + comentario;
         }
 
         Variavel v;
         String nomesVar[] = nomes.split(",");
         for (String var : nomesVar) {
-            v = new Variavel(var.trim(), tipoTranspilado);
+            v = new Variavel(var.trim(), tipoTraduzido);
             this.listVariaveis.add(v);
         }
 
-        return linhaTranspilada;
+        return linhaTraduzida;
     }
 
     private String substituirTipoVariavelJava(String tipoOrigem) {
@@ -263,57 +263,57 @@ public class JFPrincipal extends javax.swing.JFrame {
     }
 
     private String substituirProcedimentoJava(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTranspilada;
+        String linhaTraduzida;
 
         if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-            linhaTranspilada = "\t" + conteudoLinha;
+            linhaTraduzida = "\t" + conteudoLinha;
             this.incrementarQtdToken("//", true, true, false);
         } else {
             if (conteudoLinhaLimpa.startsWith("var")) {
                 this.blocoVarExtra = true;
-                linhaTranspilada = "";
+                linhaTraduzida = "";
                 this.incrementarQtdToken("var", true, false, false);
             } else if (conteudoLinhaLimpa.startsWith("inicio")) {
                 this.blocoVarExtra = false;
-                linhaTranspilada = "";
+                linhaTraduzida = "";
                 this.incrementarQtdToken("inicio", true, false, false);
             } else if (this.blocoVarExtra) {
-                linhaTranspilada = this.substituirVariaveisJava(conteudoLinha, true);
+                linhaTraduzida = this.substituirVariaveisJava(conteudoLinha, true);
             } else {
-                linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
+                linhaTraduzida = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
             }
         }
 
-        return linhaTranspilada;
+        return linhaTraduzida;
     }
 
     private String substituirFuncaoJava(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTranspilada;
+        String linhaTraduzida;
 
         if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-            linhaTranspilada = "\t" + conteudoLinha;
+            linhaTraduzida = "\t" + conteudoLinha;
             this.incrementarQtdToken("//", true, true, false);
         } else {
             if (conteudoLinhaLimpa.startsWith("var")) {
                 this.blocoVarExtra = true;
-                linhaTranspilada = "";
+                linhaTraduzida = "";
                 this.incrementarQtdToken("var", true, false, false);
             } else if (conteudoLinhaLimpa.startsWith("inicio")) {
                 this.blocoVarExtra = false;
-                linhaTranspilada = "";
+                linhaTraduzida = "";
                 this.incrementarQtdToken("inicio", true, false, false);
             } else if (this.blocoVarExtra) {
-                linhaTranspilada = this.substituirVariaveisJava(conteudoLinha, true);
+                linhaTraduzida = this.substituirVariaveisJava(conteudoLinha, true);
             } else {
-                linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
+                linhaTraduzida = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
             }
         }
 
-        return linhaTranspilada;
+        return linhaTraduzida;
     }
 
     private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTranspilada = "\t";
+        String linhaTraduzida = "\t";
         String espacoEmBranco = "";
         int inicio;
         int fim;
@@ -328,7 +328,7 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
         }
 
-        linhaTranspilada += espacoEmBranco;
+        linhaTraduzida += espacoEmBranco;
 
         while (conteudoLinha.contains("int(")) {
             inicio = conteudoLinha.indexOf("int(") + 4;
@@ -374,7 +374,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
 
         if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
-            linhaTranspilada = "\t}\n}";
+            linhaTraduzida = "\t}\n}";
             this.incrementarQtdToken("fimalgoritmo", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("se ")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
@@ -382,13 +382,13 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             String condicao = this.substituirComandos(conteudoLinhaLimpa.substring(inicio, fim));
 
-            linhaTranspilada += "if (" + condicao + ") {";
+            linhaTraduzida += "if (" + condicao + ") {";
             this.incrementarQtdToken("se", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("senao") || conteudoLinhaLimpa.startsWith("senão")) {
-            linhaTranspilada += "} else {";
+            linhaTraduzida += "} else {";
             this.incrementarQtdToken("senao", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("fimse")) {
-            linhaTranspilada += "}";
+            linhaTraduzida += "}";
             this.incrementarQtdToken("fimse", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("enquanto")) {
             inicio = conteudoLinha.indexOf("(");
@@ -396,10 +396,10 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             String condicao = this.substituirComandos(conteudoLinha.substring(inicio, fim));
 
-            linhaTranspilada += "while " + condicao + " {";
+            linhaTraduzida += "while " + condicao + " {";
             this.incrementarQtdToken("enquanto", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("fimenquanto")) {
-            linhaTranspilada += "}";
+            linhaTraduzida += "}";
             this.incrementarQtdToken("fimenquanto", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("para")) {
             conteudoLinhaLimpa = conteudoLinhaLimpa.replace("até", "ate");
@@ -424,61 +424,61 @@ public class JFPrincipal extends javax.swing.JFrame {
                 fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
                 String passo = conteudoLinhaLimpa.substring(inicio, fim).trim();
 
-                linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + " += " + passo + ") {";
+                linhaTraduzida += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + " += " + passo + ") {";
                 this.incrementarQtdToken("passo", true, true, false);
             } else {
-                linhaTranspilada += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + "++) {";
+                linhaTraduzida += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + "++) {";
             }
             this.incrementarQtdToken("faca", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("fimpara")) {
-            linhaTranspilada += "}";
+            linhaTraduzida += "}";
             this.incrementarQtdToken("fimpara", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("escolha")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variavel = conteudoLinhaLimpa.substring(inicio).trim();
 
-            linhaTranspilada += "switch (" + variavel + ") {";
+            linhaTraduzida += "switch (" + variavel + ") {";
             this.incrementarQtdToken("escolha", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("caso")) {
             inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
             String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
 
-            linhaTranspilada = "";
+            linhaTraduzida = "";
             for (var v : variaveis) {
-                linhaTranspilada += "\t" + espacoEmBranco + "case " + v.trim() + ":\n";
+                linhaTraduzida += "\t" + espacoEmBranco + "case " + v.trim() + ":\n";
             }
 
-            linhaTranspilada = linhaTranspilada.substring(0, linhaTranspilada.length() - 1);
+            linhaTraduzida = linhaTraduzida.substring(0, linhaTraduzida.length() - 1);
             this.incrementarQtdToken("caso", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("outrocaso")) {
-            linhaTranspilada += "default:";
+            linhaTraduzida += "default:";
             this.incrementarQtdToken("outrocaso", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("fimescolha")) {
-            linhaTranspilada += "}";
+            linhaTraduzida += "}";
             this.incrementarQtdToken("fimescolha", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("interrompa")) {
-            linhaTranspilada += "break;";
+            linhaTraduzida += "break;";
             this.incrementarQtdToken("interrompa", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("escreval")) {
             if (conteudoLinhaLimpa.trim().equalsIgnoreCase("escreval")) {
-                linhaTranspilada += "System.out.println(\"\");";
+                linhaTraduzida += "System.out.println(\"\");";
             } else {
                 inicio = conteudoLinha.indexOf("(");
                 fim = conteudoLinha.lastIndexOf(")") + 1;
                 String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
-                linhaTranspilada += "System.out.println" + conteudo + ";";
+                linhaTraduzida += "System.out.println" + conteudo + ";";
             }
 
             this.incrementarQtdToken("escreval", true, true, false);
         } else if (conteudoLinhaLimpa.startsWith("escreva")) {
             if (conteudoLinhaLimpa.trim().equalsIgnoreCase("escreva")) {
-                linhaTranspilada += "System.out.print(\"\");";
+                linhaTraduzida += "System.out.print(\"\");";
             } else {
                 inicio = conteudoLinha.indexOf("(");
                 fim = conteudoLinha.lastIndexOf(")") + 1;
                 String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
 
-                linhaTranspilada += "System.out.print" + conteudo + ";";
+                linhaTraduzida += "System.out.print" + conteudo + ";";
             }
 
             this.incrementarQtdToken("escreva", true, true, false);
@@ -503,19 +503,19 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             switch (tipoVariavel) {
                 case "int":
-                    linhaTranspilada += variavelCompleta + " = Integer.parseInt(scan.nextLine());";
+                    linhaTraduzida += variavelCompleta + " = Integer.parseInt(scan.nextLine());";
                     break;
                 case "double":
-                    linhaTranspilada += variavelCompleta + " = Double.parseDouble(scan.nextLine());";
+                    linhaTraduzida += variavelCompleta + " = Double.parseDouble(scan.nextLine());";
                     break;
                 case "String":
-                    linhaTranspilada += variavelCompleta + " = scan.nextLine();";
+                    linhaTraduzida += variavelCompleta + " = scan.nextLine();";
                     break;
                 case "boolean":
-                    linhaTranspilada += variavelCompleta + " = Boolean.parseBoolean(scan.nextLine());";
+                    linhaTraduzida += variavelCompleta + " = Boolean.parseBoolean(scan.nextLine());";
                     break;
                 default:
-                    linhaTranspilada += variavelCompleta + " = scan.nextLine();";
+                    linhaTraduzida += variavelCompleta + " = scan.nextLine();";
                     break;
             }
 
@@ -553,10 +553,10 @@ public class JFPrincipal extends javax.swing.JFrame {
                 this.incrementarQtdToken("mod", true, true, false);
             }
 
-            linhaTranspilada += conteudoLinha.trim() + ";";
+            linhaTraduzida += conteudoLinha.trim() + ";";
         }
 
-        return linhaTranspilada;
+        return linhaTraduzida;
     }
 
     private String qualTipoVariavel(String variavel) {
@@ -813,17 +813,17 @@ public class JFPrincipal extends javax.swing.JFrame {
         jLabel6 = new javax.swing.JLabel();
         jbSalvarJava = new javax.swing.JButton();
         jbSalvarPHP = new javax.swing.JButton();
-        jbTranspilar = new javax.swing.JButton();
+        jbTraduzir = new javax.swing.JButton();
         jbMostrarTabela = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Transpilador Visualg para Java-PHP");
+        setTitle("Tradutor Visualg para Java-PHP");
         setResizable(false);
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel5.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jLabel5.setText("Transpilador Visualg para Java-PHP");
+        jLabel5.setText("Tradutor Visualg para Java-PHP");
 
         jPanel1.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -948,13 +948,13 @@ public class JFPrincipal extends javax.swing.JFrame {
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
-        jbTranspilar.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jbTranspilar.setText("Transpilar");
-        jbTranspilar.setFocusPainted(false);
-        jbTranspilar.setFocusable(false);
-        jbTranspilar.addActionListener(new java.awt.event.ActionListener() {
+        jbTraduzir.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
+        jbTraduzir.setText("Traduzir");
+        jbTraduzir.setFocusPainted(false);
+        jbTraduzir.setFocusable(false);
+        jbTraduzir.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jbTranspilarActionPerformed(evt);
+                jbTraduzirActionPerformed(evt);
             }
         });
 
@@ -982,7 +982,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                         .addGap(57, 57, 57)
                         .addComponent(jbSelecionarArquivo)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 310, Short.MAX_VALUE)
-                        .addComponent(jbTranspilar, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jbTraduzir, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(70, 70, 70)
                         .addComponent(jbMostrarTabela, javax.swing.GroupLayout.PREFERRED_SIZE, 191, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jLabel5)
@@ -1003,7 +1003,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jtfArquivo, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jbSelecionarArquivo, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jbTranspilar, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jbTraduzir, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jbMostrarTabela, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(30, 30, 30)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1047,7 +1047,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jbSelecionarArquivoActionPerformed
 
-    private void jbTranspilarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTranspilarActionPerformed
+    private void jbTraduzirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTraduzirActionPerformed
         this.listVariaveis = new ArrayList<>();
         this.popularArrayTokens();
 
@@ -1058,16 +1058,16 @@ public class JFPrincipal extends javax.swing.JFrame {
             boolean leDados = codigo.contains("leia(");
             String vetCodigoOriginal[] = codigo.split("\\n");
 
-            String codigoTranspiladoJava = this.transpilarParaJava(vetCodigoOriginal, leDados);
-            String codigoTranspiladoPHP = this.transpilarParaPHP(vetCodigoOriginal);
+            String codigoTraduzidoJava = this.traduzirParaJava(vetCodigoOriginal, leDados);
+            String codigoTraduzidoPHP = this.traduzirParaPHP(vetCodigoOriginal);
 
-            jtaCodigoJava.setText(codigoTranspiladoJava);
-            jtaCodigoPHP.setText(codigoTranspiladoPHP);
+            jtaCodigoJava.setText(codigoTraduzidoJava);
+            jtaCodigoPHP.setText(codigoTraduzidoPHP);
 
             jbMostrarTabela.setEnabled(true);
             jbSalvarJava.setEnabled(true);
         }
-    }//GEN-LAST:event_jbTranspilarActionPerformed
+    }//GEN-LAST:event_jbTraduzirActionPerformed
 
     private void jbSalvarJavaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarJavaActionPerformed
         String codigoJava = jtaCodigoJava.getText();
@@ -1179,7 +1179,7 @@ public class JFPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton jbSalvarJava;
     private javax.swing.JButton jbSalvarPHP;
     private javax.swing.JButton jbSelecionarArquivo;
-    private javax.swing.JButton jbTranspilar;
+    private javax.swing.JButton jbTraduzir;
     private javax.swing.JTextArea jtaCodigoJava;
     private javax.swing.JTextArea jtaCodigoPHP;
     private javax.swing.JTextArea jtaCodigoVisualg;

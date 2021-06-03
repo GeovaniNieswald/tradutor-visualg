@@ -1,4 +1,4 @@
-package com.acme.transpilador.model;
+package com.acme.tradutor.model;
 
 import java.util.ArrayList;
 import java.util.List;
