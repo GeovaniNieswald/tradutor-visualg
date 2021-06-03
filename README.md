@@ -1,2 +1,2 @@
-# tradutor-visualg-java
+# tradutor-visualg
 Trabalho de Compiladores
