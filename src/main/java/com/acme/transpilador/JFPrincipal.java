@@ -523,7 +523,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         } else {
             if (conteudoLinhaLimpa.contains("retorne ")) {
                 conteudoLinha = conteudoLinha.replace("retorne ", "return ");
-                this.incrementarQtdToken(":=", true, true, false);
+                this.incrementarQtdToken("retorne", true, true, false);
             } else if (conteudoLinhaLimpa.contains(":=")) {
                 conteudoLinha = conteudoLinha.replace(":=", "=");
                 this.incrementarQtdToken(":=", true, true, false);
