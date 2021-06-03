@@ -22,11 +22,11 @@ public class JFPrincipal extends javax.swing.JFrame {
     private List<Token> tokens;
     private String classe;
 
-    private boolean blocoVarProcedimento;
+    private boolean blocoVarExtra;
 
     public JFPrincipal() {
         initComponents();
-        this.blocoVarProcedimento = false;
+        this.blocoVarExtra = false;
     }
 
     private String transpilarParaJava(String vetCodigoOriginal[], boolean leDados) {
@@ -99,15 +99,47 @@ public class JFPrincipal extends javax.swing.JFrame {
                             }
                         }
 
-                        linhaTranspilada = "\tstatic void " + nomeProcedimento + "(" + parametrosProcedimento + ") {";
+                        linhaTranspilada = "\tprivate static void " + nomeProcedimento + "(" + parametrosProcedimento + ") {";
 
                         this.incrementarQtdToken("procedimento", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("funcao ") || conteudoLinhaLimpa.startsWith("função ")) {
                         blocoVar = false;
                         blocoFuncao = true;
 
-                        // TODO: Transpilar primeira linha da função
-                        linhaTranspilada = "\tstatic ";
+                        inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
+                        fim = conteudoLinhaLimpa.indexOf("(");
+                        String nomeFuncao = conteudoLinhaLimpa.substring(inicio, fim).trim();
+                        String tiposFuncao[] = conteudoLinhaLimpa.split(":");
+                        String tipoRetorno = this.substituirTipoVariavelJava(tiposFuncao[tiposFuncao.length - 1].trim());
+                        String parametrosFuncao = "";
+
+                        inicio = conteudoLinhaLimpa.indexOf("(") + 1;
+                        fim = conteudoLinhaLimpa.lastIndexOf(")");
+                        String parametros[] = conteudoLinhaLimpa.substring(inicio, fim).trim().split(";");
+
+                        for (int i = 0; i < parametros.length; i++) {
+                            String parametro = parametros[i];
+
+                            if (i > 0) {
+                                parametrosFuncao += ", ";
+                            }
+
+                            String[] nomesTipo = parametro.split(":");
+                            String tipo = this.substituirTipoVariavelJava(nomesTipo[1].trim());
+                            String nomes[] = nomesTipo[0].trim().split(",");
+
+                            for (int j = 0; j < nomes.length; j++) {
+                                String nome = nomes[j];
+
+                                if (j == 0) {
+                                    parametrosFuncao += tipo + " " + nome.trim();
+                                } else {
+                                    parametrosFuncao += ", " + tipo + " " + nome.trim();
+                                }
+                            }
+                        }
+
+                        linhaTranspilada = "\tprivate static " + tipoRetorno + " " + nomeFuncao + "(" + parametrosFuncao + ") {";
 
                         this.incrementarQtdToken("funcao", true, true, false);
                     } else if (conteudoLinhaLimpa.startsWith("fimprocedimento")) {
@@ -123,7 +155,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                     } else if (blocoProcedimento) {
                         linhaTranspilada = this.substituirProcedimentoJava(conteudoLinha, conteudoLinhaLimpa);
                     } else if (blocoFuncao) {
-                        linhaTranspilada = this.substituirFuncaoJava(conteudoLinha);
+                        linhaTranspilada = this.substituirFuncaoJava(conteudoLinha, conteudoLinhaLimpa);
                     } else {
                         linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
                     }
@@ -214,6 +246,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 tipoDestino = "double";
                 break;
             case "caractere":
+            case "caracter":
                 tipoDestino = "String";
                 break;
             case "logico":
@@ -237,14 +270,14 @@ public class JFPrincipal extends javax.swing.JFrame {
             this.incrementarQtdToken("//", true, true, false);
         } else {
             if (conteudoLinhaLimpa.startsWith("var")) {
-                this.blocoVarProcedimento = true;
+                this.blocoVarExtra = true;
                 linhaTranspilada = "";
                 this.incrementarQtdToken("var", true, false, false);
             } else if (conteudoLinhaLimpa.startsWith("inicio")) {
-                this.blocoVarProcedimento = false;
+                this.blocoVarExtra = false;
                 linhaTranspilada = "";
                 this.incrementarQtdToken("inicio", true, false, false);
-            } else if (this.blocoVarProcedimento) {
+            } else if (this.blocoVarExtra) {
                 linhaTranspilada = this.substituirVariaveisJava(conteudoLinha, true);
             } else {
                 linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
@@ -254,9 +287,28 @@ public class JFPrincipal extends javax.swing.JFrame {
         return linhaTranspilada;
     }
 
-    private String substituirFuncaoJava(String conteudoLinha) {
-        String linhaTranspilada = "\t";
-        // TODO: Transpilar bloco Função
+    private String substituirFuncaoJava(String conteudoLinha, String conteudoLinhaLimpa) {
+        String linhaTranspilada;
+
+        if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
+            linhaTranspilada = "\t" + conteudoLinha;
+            this.incrementarQtdToken("//", true, true, false);
+        } else {
+            if (conteudoLinhaLimpa.startsWith("var")) {
+                this.blocoVarExtra = true;
+                linhaTranspilada = "";
+                this.incrementarQtdToken("var", true, false, false);
+            } else if (conteudoLinhaLimpa.startsWith("inicio")) {
+                this.blocoVarExtra = false;
+                linhaTranspilada = "";
+                this.incrementarQtdToken("inicio", true, false, false);
+            } else if (this.blocoVarExtra) {
+                linhaTranspilada = this.substituirVariaveisJava(conteudoLinha, true);
+            } else {
+                linhaTranspilada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
+            }
+        }
+
         return linhaTranspilada;
     }
 
@@ -469,7 +521,10 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             this.incrementarQtdToken("leia", true, true, false);
         } else {
-            if (conteudoLinhaLimpa.contains(":=")) {
+            if (conteudoLinhaLimpa.contains("retorne ")) {
+                conteudoLinha = conteudoLinha.replace("retorne ", "return ");
+                this.incrementarQtdToken(":=", true, true, false);
+            } else if (conteudoLinhaLimpa.contains(":=")) {
                 conteudoLinha = conteudoLinha.replace(":=", "=");
                 this.incrementarQtdToken(":=", true, true, false);
             }
@@ -730,6 +785,9 @@ public class JFPrincipal extends javax.swing.JFrame {
         this.tokens.add(t);
 
         t = new Token("fimfuncao", "sem correspondência", 0, 0, 0);
+        this.tokens.add(t);
+        
+        t = new Token("retorne", "return", 0, 0, 0);
         this.tokens.add(t);
     }
 
@@ -996,6 +1054,7 @@ public class JFPrincipal extends javax.swing.JFrame {
         String codigo = jtaCodigoVisualg.getText();
 
         if (!codigo.trim().isEmpty()) {
+            codigo = codigo.replace("\'", "\"");
             boolean leDados = codigo.contains("leia(");
             String vetCodigoOriginal[] = codigo.split("\\n");
 
