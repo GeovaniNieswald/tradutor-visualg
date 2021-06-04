@@ -297,7 +297,7 @@ public class JFPrincipal extends javax.swing.JFrame {
             this.tokens = tradJava.obterTokensAtt();
             this.classe = tradJava.obterClasse();
 
-            String codigoTraduzidoPHP = tradPHP.traduzir(vetCodigoOriginal, this.tokens);
+            String codigoTraduzidoPHP = tradPHP.traduzir(vetCodigoOriginal, leDados, this.tokens);
 
             this.tokens = tradPHP.obterTokensAtt();
 
@@ -306,6 +306,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
             jbMostrarTabela.setEnabled(true);
             jbSalvarJava.setEnabled(true);
+            jbSalvarPHP.setEnabled(true);
         }
     }//GEN-LAST:event_jbTraduzirActionPerformed
 

@@ -35,7 +35,7 @@ public class TraduzirParaJava {
         int inicio;
         int fim;
 
-        for (var conteudoLinha : vetCodigoOriginal) {
+        for (String conteudoLinha : vetCodigoOriginal) {
             conteudoLinhaLimpa = conteudoLinha.trim().toLowerCase();
 
             if (numeroLinha == 0) {
@@ -51,7 +51,7 @@ public class TraduzirParaJava {
                     if (conteudoLinhaLimpa.startsWith("var") && blocoProcedimento == false && blocoFuncao == false) {
                         blocoVar = true;
                         linhaTraduziada = "";
-                        this.incrementarQtdToken("var", true, true);
+                        this.incrementarQtdToken("var", true, false);
                     } else if (conteudoLinhaLimpa.startsWith("inicio") && blocoProcedimento == false && blocoFuncao == false) {
                         blocoVar = false;
                         linhaTraduziada = "\tpublic static void main(String args[]) {";
@@ -165,7 +165,7 @@ public class TraduzirParaJava {
     private String substituirBlocoVar(String conteudoLinha, boolean procedimentoFuncao) {
         String nomesTipo[] = conteudoLinha.split(":");
 
-        String nomes = nomesTipo[0].trim().toLowerCase().trim();
+        String nomes = nomesTipo[0].trim().trim();
         String tipo = nomesTipo[1].trim().toLowerCase().trim();
         String tipoTraduzido;
 
@@ -205,7 +205,12 @@ public class TraduzirParaJava {
 
             tipo = tipoComentario[0].trim();
             tipoTraduzido = this.substituirTipoVariavel(tipo);
-            String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
+
+            String comentario = "";
+            if (tipoComentario.length > 1) {
+                comentario = "//" + tipoComentario[1];
+                this.incrementarQtdToken("//", true, true);
+            }
 
             linhaTraduzida += tipoTraduzido;
             linhaTraduzida += " " + nomes + "; " + comentario;
@@ -279,7 +284,7 @@ public class TraduzirParaJava {
         String aux;
 
         char caracteres[] = conteudoLinha.toCharArray();
-        for (var caracter : caracteres) {
+        for (char caracter : caracteres) {
             if (caracter == ' ') {
                 espacoEmBranco += " ";
             } else {
@@ -403,7 +408,7 @@ public class TraduzirParaJava {
             String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
 
             linhaTraduzida = "";
-            for (var v : variaveis) {
+            for (String v : variaveis) {
                 linhaTraduzida += "\t" + espacoEmBranco + "case " + v.trim() + ":\n";
             }
 
@@ -441,7 +446,7 @@ public class TraduzirParaJava {
             }
 
             this.incrementarQtdToken("escreva", true, true);
-        } else if (conteudoLinhaLimpa.startsWith("leia(")) {
+        } else if (conteudoLinhaLimpa.startsWith("leia(") || conteudoLinhaLimpa.startsWith("leia (")) {
             inicio = conteudoLinha.indexOf("(") + 1;
 
             String variavel;
