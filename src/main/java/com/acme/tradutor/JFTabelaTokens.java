@@ -30,7 +30,7 @@ public class JFTabelaTokens extends JDialog {
         jPanel1 = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
-        setTitle("Tradutor Visualg para Java-PHP (TOKENS)");
+        setTitle("Tradutor Visualg para Java-Python (TOKENS)");
         setModalityType(java.awt.Dialog.ModalityType.APPLICATION_MODAL);
         setResizable(false);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -44,7 +44,7 @@ public class JFTabelaTokens extends JDialog {
         jScrollPane1.setViewportView(jtTokens);
 
         jLabel5.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jLabel5.setText("Tradutor Visualg para Java-PHP (TOKENS)");
+        jLabel5.setText("Tradutor Visualg para Java-Python (TOKENS)");
 
         jPanel1.setBackground(new java.awt.Color(0, 0, 0));
 

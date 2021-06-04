@@ -4,19 +4,21 @@ public class Token {
 
     private String tokenVisualg;
     private String tokenJava;
+    private String tokenPython;
     private int qtdVisualg;
     private int qtdJava;
-    private int qtdPHP;
+    private int qtdPython;
 
     public Token() {
     }
 
-    public Token(String tokenVisualg, String tokenJava, int qtdVisualg, int qtdJava, int qtdPHP) {
+    public Token(String tokenVisualg, String tokenJava, String tokenPython, int qtdVisualg, int qtdJava, int qtdPython) {
         this.tokenVisualg = tokenVisualg;
         this.tokenJava = tokenJava;
+        this.tokenPython = tokenPython;
         this.qtdVisualg = qtdVisualg;
         this.qtdJava = qtdJava;
-        this.qtdPHP = qtdPHP;
+        this.qtdPython = qtdPython;
     }
 
     public String getTokenVisualg() {
@@ -35,6 +37,14 @@ public class Token {
         this.tokenJava = tokenJava;
     }
 
+    public String getTokenPython() {
+        return tokenPython;
+    }
+
+    public void setTokenPython(String tokenPython) {
+        this.tokenPython = tokenPython;
+    }
+
     public int getQtdVisualg() {
         return qtdVisualg;
     }
@@ -51,12 +61,12 @@ public class Token {
         this.qtdJava = qtdJava;
     }
 
-    public int getQtdPHP() {
-        return qtdPHP;
+    public int getQtdPython() {
+        return qtdPython;
     }
 
-    public void setQtdPHP(int qtdPHP) {
-        this.qtdPHP = qtdPHP;
+    public void setQtdPython(int qtdPython) {
+        this.qtdPython = qtdPython;
     }
 
 }

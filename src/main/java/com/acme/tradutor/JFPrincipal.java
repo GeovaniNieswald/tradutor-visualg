@@ -1,12 +1,10 @@
 package com.acme.tradutor;
 
 import com.acme.tradutor.model.Token;
-import com.acme.tradutor.model.Variavel;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,777 +16,11 @@ import org.apache.commons.io.FileUtils;
 
 public class JFPrincipal extends javax.swing.JFrame {
 
-    private List<Variavel> listVariaveis;
     private List<Token> tokens;
     private String classe;
 
-    private boolean blocoVarExtra;
-
     public JFPrincipal() {
         initComponents();
-        this.blocoVarExtra = false;
-    }
-
-    private String traduzirParaJava(String vetCodigoOriginal[], boolean leDados) {
-        String codigoTraduzidoJava = leDados ? "import java.util.Scanner;\n\n" : "";
-
-        int numeroLinha = 0;
-        boolean blocoVar = false;
-        boolean blocoProcedimento = false;
-        boolean blocoFuncao = false;
-        String conteudoLinhaLimpa;
-        String linhaTraduziada;
-
-        int inicio;
-        int fim;
-
-        for (var conteudoLinha : vetCodigoOriginal) {
-            conteudoLinhaLimpa = conteudoLinha.trim().toLowerCase();
-
-            if (numeroLinha == 0) {
-                String nomeClasse[] = conteudoLinha.split("\"");
-                this.classe = this.primeiraLetraMaiuscula(this.removerCaracteresEspeciais(nomeClasse[1]));
-                linhaTraduziada = "public class " + this.classe + " {";
-                this.incrementarQtdToken("algoritmo", true, true, false);
-            } else {
-                if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-                    linhaTraduziada = "\t" + conteudoLinha;
-                    this.incrementarQtdToken("//", true, true, false);
-                } else {
-                    if (conteudoLinhaLimpa.startsWith("var") && blocoProcedimento == false && blocoFuncao == false) {
-                        blocoVar = true;
-                        linhaTraduziada = "";
-                        this.incrementarQtdToken("var", true, true, false);
-                    } else if (conteudoLinhaLimpa.startsWith("inicio") && blocoProcedimento == false && blocoFuncao == false) {
-                        blocoVar = false;
-                        linhaTraduziada = "\tpublic static void main(String args[]) {";
-                        linhaTraduziada += leDados ? "\n\t\tScanner scan = new Scanner(System.in);" : "";
-                        this.incrementarQtdToken("inicio", true, true, false);
-                    } else if (conteudoLinhaLimpa.startsWith("procedimento ")) {
-                        blocoVar = false;
-                        blocoProcedimento = true;
-
-                        inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-                        fim = conteudoLinhaLimpa.indexOf("(");
-                        String nomeProcedimento = conteudoLinhaLimpa.substring(inicio, fim).trim();
-                        String parametrosProcedimento = "";
-
-                        inicio = conteudoLinhaLimpa.indexOf("(") + 1;
-                        fim = conteudoLinhaLimpa.lastIndexOf(")");
-                        String parametros[] = conteudoLinhaLimpa.substring(inicio, fim).trim().split(";");
-
-                        for (int i = 0; i < parametros.length; i++) {
-                            String parametro = parametros[i];
-
-                            if (i > 0) {
-                                parametrosProcedimento += ", ";
-                            }
-
-                            String[] nomesTipo = parametro.split(":");
-                            String tipo = this.substituirTipoVariavelJava(nomesTipo[1].trim());
-                            String nomes[] = nomesTipo[0].trim().split(",");
-
-                            for (int j = 0; j < nomes.length; j++) {
-                                String nome = nomes[j];
-
-                                if (j == 0) {
-                                    parametrosProcedimento += tipo + " " + nome.trim();
-                                } else {
-                                    parametrosProcedimento += ", " + tipo + " " + nome.trim();
-                                }
-                            }
-                        }
-
-                        linhaTraduziada = "\tprivate static void " + nomeProcedimento + "(" + parametrosProcedimento + ") {";
-
-                        this.incrementarQtdToken("procedimento", true, true, false);
-                    } else if (conteudoLinhaLimpa.startsWith("funcao ") || conteudoLinhaLimpa.startsWith("função ")) {
-                        blocoVar = false;
-                        blocoFuncao = true;
-
-                        inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-                        fim = conteudoLinhaLimpa.indexOf("(");
-                        String nomeFuncao = conteudoLinhaLimpa.substring(inicio, fim).trim();
-                        String tiposFuncao[] = conteudoLinhaLimpa.split(":");
-                        String tipoRetorno = this.substituirTipoVariavelJava(tiposFuncao[tiposFuncao.length - 1].trim());
-                        String parametrosFuncao = "";
-
-                        inicio = conteudoLinhaLimpa.indexOf("(") + 1;
-                        fim = conteudoLinhaLimpa.lastIndexOf(")");
-                        String parametros[] = conteudoLinhaLimpa.substring(inicio, fim).trim().split(";");
-
-                        for (int i = 0; i < parametros.length; i++) {
-                            String parametro = parametros[i];
-
-                            if (i > 0) {
-                                parametrosFuncao += ", ";
-                            }
-
-                            String[] nomesTipo = parametro.split(":");
-                            String tipo = this.substituirTipoVariavelJava(nomesTipo[1].trim());
-                            String nomes[] = nomesTipo[0].trim().split(",");
-
-                            for (int j = 0; j < nomes.length; j++) {
-                                String nome = nomes[j];
-
-                                if (j == 0) {
-                                    parametrosFuncao += tipo + " " + nome.trim();
-                                } else {
-                                    parametrosFuncao += ", " + tipo + " " + nome.trim();
-                                }
-                            }
-                        }
-
-                        linhaTraduziada = "\tprivate static " + tipoRetorno + " " + nomeFuncao + "(" + parametrosFuncao + ") {";
-
-                        this.incrementarQtdToken("funcao", true, true, false);
-                    } else if (conteudoLinhaLimpa.startsWith("fimprocedimento")) {
-                        blocoProcedimento = false;
-                        linhaTraduziada = "\t}";
-                        this.incrementarQtdToken("fimprocedimento", true, true, false);
-                    } else if (conteudoLinhaLimpa.startsWith("fimfuncao") || conteudoLinhaLimpa.startsWith("fimfunção")) {
-                        blocoFuncao = false;
-                        linhaTraduziada = "\t}";
-                        this.incrementarQtdToken("fimfuncao", true, true, false);
-                    } else if (blocoVar) {
-                        linhaTraduziada = this.substituirVariaveisJava(conteudoLinha, false);
-                    } else if (blocoProcedimento) {
-                        linhaTraduziada = this.substituirProcedimentoJava(conteudoLinha, conteudoLinhaLimpa);
-                    } else if (blocoFuncao) {
-                        linhaTraduziada = this.substituirFuncaoJava(conteudoLinha, conteudoLinhaLimpa);
-                    } else {
-                        linhaTraduziada = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
-                    }
-                }
-            }
-
-            codigoTraduzidoJava += linhaTraduziada + "\n";
-            numeroLinha++;
-        }
-
-        return codigoTraduzidoJava;
-    }
-
-    private String traduzirParaPHP(String vetCodigoOriginal[]) {
-        String codigoTraduzidoPHP = "";
-        // TODO: Fazer tradução para PHP
-        return codigoTraduzidoPHP;
-    }
-
-    private String substituirVariaveisJava(String conteudoLinha, boolean procedimentoFuncao) {
-        String nomesTipo[] = conteudoLinha.split(":");
-
-        String nomes = nomesTipo[0].trim().toLowerCase().trim();
-        String tipo = nomesTipo[1].trim().toLowerCase().trim();
-        String tipoTraduzido;
-
-        String linhaTraduzida = procedimentoFuncao ? "\t" : "\tprivate static ";
-
-        if (tipo.startsWith("vetor")) {
-            String tamanhoTipoComentario[] = tipo.split(" de ");
-            String tipoComentario[] = tamanhoTipoComentario[1].split("//");
-
-            String tamanho = tamanhoTipoComentario[0].trim();
-            tamanho = tamanho.replace(" ", "").replace("vetor", "").replace("[", "").replace("]", "");
-            tipo = tipoComentario[0].trim();
-            String comentario = "";
-
-            if (tipoComentario.length > 1) {
-                comentario = "//" + tipoComentario[1];
-                this.incrementarQtdToken("//", true, true, false);
-            }
-
-            tipoTraduzido = this.substituirTipoVariavelJava(tipo);
-
-            boolean ehMatriz = tamanho.contains(",");
-
-            if (ehMatriz) {
-                String tamanhoMatriz[] = tamanho.split(",");
-                int tamanhoMat1 = Integer.parseInt(tamanhoMatriz[0].split("\\.\\.")[1]);
-                int tamanhoMat2 = Integer.parseInt(tamanhoMatriz[1].split("\\.\\.")[1]);
-
-                linhaTraduzida += tipoTraduzido + "[][] " + nomes + " = new " + tipoTraduzido + "[" + tamanhoMat1 + "]" + "[" + tamanhoMat2 + "]; " + comentario;
-            } else {
-                int tamanhoVet = Integer.parseInt(tamanho.split("\\.\\.")[1]);
-                linhaTraduzida += tipoTraduzido + "[] " + nomes + " = new " + tipoTraduzido + "[" + tamanhoVet + "]; " + comentario;
-            }
-            this.incrementarQtdToken("vetor", true, true, false);
-        } else {
-            String tipoComentario[] = tipo.split("//");
-
-            tipo = tipoComentario[0].trim();
-            tipoTraduzido = this.substituirTipoVariavelJava(tipo);
-            String comentario = tipoComentario.length > 1 ? "//" + tipoComentario[1] : "";
-
-            linhaTraduzida += tipoTraduzido;
-            linhaTraduzida += " " + nomes + "; " + comentario;
-        }
-
-        Variavel v;
-        String nomesVar[] = nomes.split(",");
-        for (String var : nomesVar) {
-            v = new Variavel(var.trim(), tipoTraduzido);
-            this.listVariaveis.add(v);
-        }
-
-        return linhaTraduzida;
-    }
-
-    private String substituirTipoVariavelJava(String tipoOrigem) {
-        tipoOrigem = tipoOrigem.trim().toLowerCase();
-        String tipoDestino;
-
-        switch (tipoOrigem) {
-            case "inteiro":
-                tipoDestino = "int";
-                break;
-            case "real":
-                tipoDestino = "double";
-                break;
-            case "caractere":
-            case "caracter":
-                tipoDestino = "String";
-                break;
-            case "logico":
-                tipoDestino = "boolean";
-                break;
-            default:
-                tipoDestino = tipoOrigem;
-                break;
-        }
-
-        this.incrementarQtdToken(tipoOrigem, true, true, false);
-
-        return tipoDestino;
-    }
-
-    private String substituirProcedimentoJava(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTraduzida;
-
-        if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-            linhaTraduzida = "\t" + conteudoLinha;
-            this.incrementarQtdToken("//", true, true, false);
-        } else {
-            if (conteudoLinhaLimpa.startsWith("var")) {
-                this.blocoVarExtra = true;
-                linhaTraduzida = "";
-                this.incrementarQtdToken("var", true, false, false);
-            } else if (conteudoLinhaLimpa.startsWith("inicio")) {
-                this.blocoVarExtra = false;
-                linhaTraduzida = "";
-                this.incrementarQtdToken("inicio", true, false, false);
-            } else if (this.blocoVarExtra) {
-                linhaTraduzida = this.substituirVariaveisJava(conteudoLinha, true);
-            } else {
-                linhaTraduzida = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
-            }
-        }
-
-        return linhaTraduzida;
-    }
-
-    private String substituirFuncaoJava(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTraduzida;
-
-        if (conteudoLinhaLimpa.startsWith("//") || conteudoLinhaLimpa.isEmpty()) {
-            linhaTraduzida = "\t" + conteudoLinha;
-            this.incrementarQtdToken("//", true, true, false);
-        } else {
-            if (conteudoLinhaLimpa.startsWith("var")) {
-                this.blocoVarExtra = true;
-                linhaTraduzida = "";
-                this.incrementarQtdToken("var", true, false, false);
-            } else if (conteudoLinhaLimpa.startsWith("inicio")) {
-                this.blocoVarExtra = false;
-                linhaTraduzida = "";
-                this.incrementarQtdToken("inicio", true, false, false);
-            } else if (this.blocoVarExtra) {
-                linhaTraduzida = this.substituirVariaveisJava(conteudoLinha, true);
-            } else {
-                linhaTraduzida = this.substituirBlocoInicio(conteudoLinha, conteudoLinhaLimpa);
-            }
-        }
-
-        return linhaTraduzida;
-    }
-
-    private String substituirBlocoInicio(String conteudoLinha, String conteudoLinhaLimpa) {
-        String linhaTraduzida = "\t";
-        String espacoEmBranco = "";
-        int inicio;
-        int fim;
-        String aux;
-
-        char caracteres[] = conteudoLinha.toCharArray();
-        for (var caracter : caracteres) {
-            if (caracter == ' ') {
-                espacoEmBranco += " ";
-            } else {
-                break;
-            }
-        }
-
-        linhaTraduzida += espacoEmBranco;
-
-        while (conteudoLinha.contains("int(")) {
-            inicio = conteudoLinha.indexOf("int(") + 4;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("int(" + aux + ")", "(int) " + aux);
-            this.incrementarQtdToken("int", true, true, false);
-        }
-        while (conteudoLinha.contains("maiusc(")) {
-            inicio = conteudoLinha.indexOf("maiusc(") + 7;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("maiusc(" + aux + ")", aux + ".toUpperCase()");
-            this.incrementarQtdToken("maiusc", true, true, false);
-        }
-        while (conteudoLinha.contains("minusc(")) {
-            inicio = conteudoLinha.indexOf("minusc(") + 7;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("minusc(" + aux + ")", aux + ".toLowerCase()");
-            this.incrementarQtdToken("minusc", true, true, false);
-        }
-        while (conteudoLinha.contains("caracpnum(")) {
-            inicio = conteudoLinha.indexOf("caracpnum(") + 10;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("caracpnum(" + aux + ")", "Integer.parseInt(" + aux + ")");
-            this.incrementarQtdToken("caracpnum", true, true, false);
-        }
-        while (conteudoLinha.contains("compr(")) {
-            inicio = conteudoLinha.indexOf("compr(") + 6;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("compr(" + aux + ")", aux + ".length()");
-            this.incrementarQtdToken("compr", true, true, false);
-        }
-        while (conteudoLinha.contains("numpcarac(")) {
-            inicio = conteudoLinha.indexOf("numpcarac(") + 10;
-            fim = conteudoLinha.indexOf(")", inicio);
-            aux = conteudoLinha.substring(inicio, fim).trim();
-            conteudoLinha = conteudoLinha.replace("numpcarac(" + aux + ")", "String.valueOf(" + aux + ")");
-            this.incrementarQtdToken("numpcarac", true, true, false);
-        }
-
-        if (conteudoLinhaLimpa.startsWith("fimalgoritmo")) {
-            linhaTraduzida = "\t}\n}";
-            this.incrementarQtdToken("fimalgoritmo", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("se ")) {
-            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            fim = conteudoLinhaLimpa.indexOf(" entao");
-
-            String condicao = this.substituirComandos(conteudoLinhaLimpa.substring(inicio, fim));
-
-            linhaTraduzida += "if (" + condicao + ") {";
-            this.incrementarQtdToken("se", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("senao") || conteudoLinhaLimpa.startsWith("senão")) {
-            linhaTraduzida += "} else {";
-            this.incrementarQtdToken("senao", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("fimse")) {
-            linhaTraduzida += "}";
-            this.incrementarQtdToken("fimse", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("enquanto")) {
-            inicio = conteudoLinha.indexOf("(");
-            fim = conteudoLinha.lastIndexOf(")") + 1;
-
-            String condicao = this.substituirComandos(conteudoLinha.substring(inicio, fim));
-
-            linhaTraduzida += "while " + condicao + " {";
-            this.incrementarQtdToken("enquanto", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("fimenquanto")) {
-            linhaTraduzida += "}";
-            this.incrementarQtdToken("fimenquanto", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("para")) {
-            conteudoLinhaLimpa = conteudoLinhaLimpa.replace("até", "ate");
-
-            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
-            String variavel = conteudoLinhaLimpa.substring(inicio, fim).trim();
-
-            inicio = conteudoLinhaLimpa.indexOf(" de ") + 4;
-            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
-            String valor1 = conteudoLinhaLimpa.substring(inicio, fim).trim();
-
-            inicio = conteudoLinhaLimpa.indexOf(" ate ") + 5;
-            fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
-            String valorN = conteudoLinhaLimpa.substring(inicio, fim).trim();
-
-            this.incrementarQtdToken("para", true, true, false);
-            this.incrementarQtdToken("ate", true, true, false);
-
-            if (conteudoLinhaLimpa.contains(" passo ")) {
-                inicio = conteudoLinhaLimpa.indexOf(" passo ") + 7;
-                fim = conteudoLinhaLimpa.indexOf(" ", inicio) + 1;
-                String passo = conteudoLinhaLimpa.substring(inicio, fim).trim();
-
-                linhaTraduzida += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + " += " + passo + ") {";
-                this.incrementarQtdToken("passo", true, true, false);
-            } else {
-                linhaTraduzida += "for (" + variavel + " = " + valor1 + "; " + variavel + " <= " + valorN + "; " + variavel + "++) {";
-            }
-            this.incrementarQtdToken("faca", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("fimpara")) {
-            linhaTraduzida += "}";
-            this.incrementarQtdToken("fimpara", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("escolha")) {
-            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            String variavel = conteudoLinhaLimpa.substring(inicio).trim();
-
-            linhaTraduzida += "switch (" + variavel + ") {";
-            this.incrementarQtdToken("escolha", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("caso")) {
-            inicio = conteudoLinhaLimpa.indexOf(" ") + 1;
-            String variaveis[] = conteudoLinhaLimpa.substring(inicio).trim().split(",");
-
-            linhaTraduzida = "";
-            for (var v : variaveis) {
-                linhaTraduzida += "\t" + espacoEmBranco + "case " + v.trim() + ":\n";
-            }
-
-            linhaTraduzida = linhaTraduzida.substring(0, linhaTraduzida.length() - 1);
-            this.incrementarQtdToken("caso", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("outrocaso")) {
-            linhaTraduzida += "default:";
-            this.incrementarQtdToken("outrocaso", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("fimescolha")) {
-            linhaTraduzida += "}";
-            this.incrementarQtdToken("fimescolha", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("interrompa")) {
-            linhaTraduzida += "break;";
-            this.incrementarQtdToken("interrompa", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("escreval")) {
-            if (conteudoLinhaLimpa.trim().equalsIgnoreCase("escreval")) {
-                linhaTraduzida += "System.out.println(\"\");";
-            } else {
-                inicio = conteudoLinha.indexOf("(");
-                fim = conteudoLinha.lastIndexOf(")") + 1;
-                String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
-                linhaTraduzida += "System.out.println" + conteudo + ";";
-            }
-
-            this.incrementarQtdToken("escreval", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("escreva")) {
-            if (conteudoLinhaLimpa.trim().equalsIgnoreCase("escreva")) {
-                linhaTraduzida += "System.out.print(\"\");";
-            } else {
-                inicio = conteudoLinha.indexOf("(");
-                fim = conteudoLinha.lastIndexOf(")") + 1;
-                String conteudo = conteudoLinha.substring(inicio, fim).replace(",", "+");
-
-                linhaTraduzida += "System.out.print" + conteudo + ";";
-            }
-
-            this.incrementarQtdToken("escreva", true, true, false);
-        } else if (conteudoLinhaLimpa.startsWith("leia(")) {
-            inicio = conteudoLinha.indexOf("(") + 1;
-
-            String variavel;
-            String variavelCompleta;
-
-            if (conteudoLinha.contains("[")) {
-                fim = conteudoLinha.lastIndexOf("[");
-                variavel = conteudoLinha.substring(inicio, fim).trim();
-                fim = conteudoLinha.lastIndexOf("]") + 1;
-                variavelCompleta = conteudoLinha.substring(inicio, fim).trim();
-            } else {
-                fim = conteudoLinha.lastIndexOf(")");
-                variavel = conteudoLinha.substring(inicio, fim).trim();
-                variavelCompleta = conteudoLinha.substring(inicio, fim).trim();
-            }
-
-            String tipoVariavel = this.qualTipoVariavel(variavel);
-
-            switch (tipoVariavel) {
-                case "int":
-                    linhaTraduzida += variavelCompleta + " = Integer.parseInt(scan.nextLine());";
-                    break;
-                case "double":
-                    linhaTraduzida += variavelCompleta + " = Double.parseDouble(scan.nextLine());";
-                    break;
-                case "String":
-                    linhaTraduzida += variavelCompleta + " = scan.nextLine();";
-                    break;
-                case "boolean":
-                    linhaTraduzida += variavelCompleta + " = Boolean.parseBoolean(scan.nextLine());";
-                    break;
-                default:
-                    linhaTraduzida += variavelCompleta + " = scan.nextLine();";
-                    break;
-            }
-
-            this.incrementarQtdToken("leia", true, true, false);
-        } else {
-            if (conteudoLinhaLimpa.contains("retorne ")) {
-                conteudoLinha = conteudoLinha.replace("retorne ", "return ");
-                this.incrementarQtdToken("retorne", true, true, false);
-            } else if (conteudoLinhaLimpa.contains(":=")) {
-                conteudoLinha = conteudoLinha.replace(":=", "=");
-                this.incrementarQtdToken(":=", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains("<-")) {
-                conteudoLinha = conteudoLinha.replace("<-", "=");
-                this.incrementarQtdToken("<-", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains("verdadeiro")) {
-                conteudoLinha = conteudoLinha.replace("verdadeiro", "true");
-                this.incrementarQtdToken("verdadeiro", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains("falso")) {
-                conteudoLinha = conteudoLinha.replace("falso", "false");
-                this.incrementarQtdToken("falso", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains("<>")) {
-                conteudoLinha = conteudoLinha.replace("<>", "!=");
-                this.incrementarQtdToken("<>", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains("não") || conteudoLinhaLimpa.contains("nao")) {
-                conteudoLinha = conteudoLinha.replace("nao", "!").replace("não", "!");
-                this.incrementarQtdToken("nao", true, true, false);
-            }
-            if (conteudoLinhaLimpa.contains(" mod ")) {
-                conteudoLinha = conteudoLinha.replace(" mod ", " % ");
-                this.incrementarQtdToken("mod", true, true, false);
-            }
-
-            linhaTraduzida += conteudoLinha.trim() + ";";
-        }
-
-        return linhaTraduzida;
-    }
-
-    private String qualTipoVariavel(String variavel) {
-        String tipoVariavel = "";
-
-        for (Variavel v : listVariaveis) {
-            if (v.getNome().equalsIgnoreCase(variavel)) {
-                return v.getTipo();
-            }
-        }
-
-        return tipoVariavel;
-    }
-
-    private String substituirComandos(String comando) {
-        if (comando.contains("verdadeiro")) {
-            comando = comando.replace("verdadeiro", "true");
-            this.incrementarQtdToken("verdadeiro", true, true, false);
-        }
-        if (comando.contains("falso")) {
-            comando = comando.replace("falso", "false");
-            this.incrementarQtdToken("falso", true, true, false);
-        }
-        if (comando.contains("=")) {
-            comando = comando.replace("=", "==");
-            this.incrementarQtdToken("=", true, true, false);
-        }
-        if (comando.contains("<>")) {
-            comando = comando.replace("<>", "!=");
-            this.incrementarQtdToken("<>", true, true, false);
-        }
-        if (comando.contains(" e ")) {
-            comando = comando.replace(" e ", " && ");
-            this.incrementarQtdToken("e", true, true, false);
-        }
-        if (comando.contains(" ou ")) {
-            comando = comando.replace(" ou ", " || ");
-            this.incrementarQtdToken("ou", true, true, false);
-        }
-        if (comando.contains(" não ") || comando.contains(" nao ")) {
-            comando = comando.replace(" nao ", "!").replace(" não ", "!");
-            this.incrementarQtdToken("nao", true, true, false);
-        }
-        if (comando.contains(" mod ")) {
-            comando = comando.replace(" mod ", " % ");
-            this.incrementarQtdToken("mod", true, true, false);
-        }
-
-        return comando;
-    }
-
-    private String removerCaracteresEspeciais(String str) {
-        return str.replaceAll("[^a-zZ-Z0-9]", "");
-    }
-
-    private String primeiraLetraMaiuscula(String str) {
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
-    }
-
-    private void incrementarQtdToken(String token, boolean qtdVisualg, boolean qtdJava, boolean qtdPHP) {
-        for (Token t : tokens) {
-            if (t.getTokenVisualg().equalsIgnoreCase(token)) {
-                if (qtdVisualg) {
-                    t.setQtdVisualg(t.getQtdVisualg() + 1);
-                }
-                if (qtdJava) {
-                    t.setQtdJava(t.getQtdJava() + 1);
-                }
-                if (qtdPHP) {
-                    t.setQtdPHP(t.getQtdPHP() + 1);
-                }
-
-                break;
-            }
-        }
-    }
-
-    private void popularArrayTokens() {
-        this.tokens = new ArrayList<>();
-
-        Token t = new Token("//", "//", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("algoritmo", "public class", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimalgoritmo", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("var", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("inteiro", "int", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("vetor", "[]", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("real", "double", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("caractere", "String", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("logico", "boolean", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("inicio", "public static void main(String args[])", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("se", "if", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("entao", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("senao", "else", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimse", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("enquanto", "while", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimenquanto", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("para", "for", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("ate", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("passo", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("faca", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimpara", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("escolha", "switch", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("caso", "case", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("outrocaso", "default", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimescolha", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("interrompa", "break", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("escreval", "System.out.println()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("escreva", "System.out.print()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("int", "(int)", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("maiusc", ".toUpperCase()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("minusc", ".toLowerCase()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("caracpnum", "Integer.parseInt()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("compr", ".length()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("numpcarac", "String.valueOf()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("nao", "!", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("falso", "false", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("verdadeiro", "true", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("mod", "%", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("e", "&&", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("ou", "||", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("=", "==", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("<>", "!=", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token(":=", "=", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("<-", "=", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimalgoritmo", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("leia", "new Scanner(System.in).nextLine()", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("procedimento", "static void nome(tipo parâmetro, ...)", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimprocedimento", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("funcao", "static tipo nome(tipo parâmetro, ...)", 0, 0, 0);
-        this.tokens.add(t);
-
-        t = new Token("fimfuncao", "sem correspondência", 0, 0, 0);
-        this.tokens.add(t);
-        
-        t = new Token("retorne", "return", 0, 0, 0);
-        this.tokens.add(t);
     }
 
     @SuppressWarnings("unchecked")
@@ -809,21 +41,21 @@ public class JFPrincipal extends javax.swing.JFrame {
         jtaCodigoJava = new javax.swing.JTextArea();
         jLabel3 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jtaCodigoPHP = new javax.swing.JTextArea();
+        jtaCodigoPython = new javax.swing.JTextArea();
         jLabel6 = new javax.swing.JLabel();
         jbSalvarJava = new javax.swing.JButton();
-        jbSalvarPHP = new javax.swing.JButton();
+        jbSalvarPython = new javax.swing.JButton();
         jbTraduzir = new javax.swing.JButton();
         jbMostrarTabela = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Tradutor Visualg para Java-PHP");
+        setTitle("Tradutor Visualg para Java-Python");
         setResizable(false);
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel5.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jLabel5.setText("Tradutor Visualg para Java-PHP");
+        jLabel5.setText("Tradutor Visualg para Java-Python");
 
         jPanel1.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -873,13 +105,13 @@ public class JFPrincipal extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
         jLabel3.setText("Código em Java");
 
-        jtaCodigoPHP.setEditable(false);
-        jtaCodigoPHP.setColumns(20);
-        jtaCodigoPHP.setRows(5);
-        jScrollPane3.setViewportView(jtaCodigoPHP);
+        jtaCodigoPython.setEditable(false);
+        jtaCodigoPython.setColumns(20);
+        jtaCodigoPython.setRows(5);
+        jScrollPane3.setViewportView(jtaCodigoPython);
 
         jLabel6.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
-        jLabel6.setText("Código em PHP");
+        jLabel6.setText("Código em Python");
 
         jbSalvarJava.setText("Salvar");
         jbSalvarJava.setEnabled(false);
@@ -892,14 +124,14 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
         });
 
-        jbSalvarPHP.setText("Salvar");
-        jbSalvarPHP.setCursor(new java.awt.Cursor(java.awt.Cursor.W_RESIZE_CURSOR));
-        jbSalvarPHP.setEnabled(false);
-        jbSalvarPHP.setFocusPainted(false);
-        jbSalvarPHP.setFocusable(false);
-        jbSalvarPHP.addActionListener(new java.awt.event.ActionListener() {
+        jbSalvarPython.setText("Salvar");
+        jbSalvarPython.setCursor(new java.awt.Cursor(java.awt.Cursor.W_RESIZE_CURSOR));
+        jbSalvarPython.setEnabled(false);
+        jbSalvarPython.setFocusPainted(false);
+        jbSalvarPython.setFocusable(false);
+        jbSalvarPython.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jbSalvarPHPActionPerformed(evt);
+                jbSalvarPythonActionPerformed(evt);
             }
         });
 
@@ -924,7 +156,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 .addGap(0, 0, 0)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jbSalvarJava)
-                    .addComponent(jbSalvarPHP)))
+                    .addComponent(jbSalvarPython)))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -943,7 +175,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                         .addComponent(jLabel6)
                         .addGap(5, 5, 5)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jbSalvarPHP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jbSalvarPython, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jScrollPane3))))
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -1048,8 +280,10 @@ public class JFPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jbSelecionarArquivoActionPerformed
 
     private void jbTraduzirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTraduzirActionPerformed
-        this.listVariaveis = new ArrayList<>();
-        this.popularArrayTokens();
+        TraduzirParaJava tradJava = new TraduzirParaJava();
+        TraduzirParaPython tradPython = new TraduzirParaPython();
+
+        this.tokens = Utils.popularArrayTokens();
 
         String codigo = jtaCodigoVisualg.getText();
 
@@ -1058,11 +292,17 @@ public class JFPrincipal extends javax.swing.JFrame {
             boolean leDados = codigo.contains("leia(");
             String vetCodigoOriginal[] = codigo.split("\\n");
 
-            String codigoTraduzidoJava = this.traduzirParaJava(vetCodigoOriginal, leDados);
-            String codigoTraduzidoPHP = this.traduzirParaPHP(vetCodigoOriginal);
+            String codigoTraduzidoJava = tradJava.traduzir(vetCodigoOriginal, leDados, this.tokens);
+
+            this.tokens = tradJava.obterTokensAtt();
+            this.classe = tradJava.obterClasse();
+
+            String codigoTraduzidoPython = tradPython.traduzir(vetCodigoOriginal, this.tokens);
+
+            this.tokens = tradPython.obterTokensAtt();
 
             jtaCodigoJava.setText(codigoTraduzidoJava);
-            jtaCodigoPHP.setText(codigoTraduzidoPHP);
+            jtaCodigoPython.setText(codigoTraduzidoPython);
 
             jbMostrarTabela.setEnabled(true);
             jbSalvarJava.setEnabled(true);
@@ -1105,13 +345,13 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jbSalvarJavaActionPerformed
 
-    private void jbSalvarPHPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarPHPActionPerformed
-        String codigoPHP = jtaCodigoPHP.getText();
+    private void jbSalvarPythonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarPythonActionPerformed
+        String codigoPython = jtaCodigoPython.getText();
 
-        if (!codigoPHP.trim().isEmpty()) {
-            String arquivo = this.classe + ".php";
+        if (!codigoPython.trim().isEmpty()) {
+            String arquivo = this.classe + ".py";
 
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("PHP", "php");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("Python", "py");
 
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Selecione um local para salvar");
@@ -1128,7 +368,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
                 try {
                     try (FileOutputStream outputStream = new FileOutputStream(fileToSave)) {
-                        byte[] strToBytes = codigoPHP.getBytes();
+                        byte[] strToBytes = codigoPython.getBytes();
                         outputStream.write(strToBytes);
                     }
 
@@ -1139,7 +379,7 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
 
         }
-    }//GEN-LAST:event_jbSalvarPHPActionPerformed
+    }//GEN-LAST:event_jbSalvarPythonActionPerformed
 
     private void jbMostrarTabelaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbMostrarTabelaActionPerformed
         JFTabelaTokens frame = new JFTabelaTokens(tokens);
@@ -1177,11 +417,11 @@ public class JFPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JButton jbMostrarTabela;
     private javax.swing.JButton jbSalvarJava;
-    private javax.swing.JButton jbSalvarPHP;
+    private javax.swing.JButton jbSalvarPython;
     private javax.swing.JButton jbSelecionarArquivo;
     private javax.swing.JButton jbTraduzir;
     private javax.swing.JTextArea jtaCodigoJava;
-    private javax.swing.JTextArea jtaCodigoPHP;
+    private javax.swing.JTextArea jtaCodigoPython;
     private javax.swing.JTextArea jtaCodigoVisualg;
     private javax.swing.JTextField jtfArquivo;
     // End of variables declaration//GEN-END:variables
