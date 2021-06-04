@@ -41,21 +41,21 @@ public class JFPrincipal extends javax.swing.JFrame {
         jtaCodigoJava = new javax.swing.JTextArea();
         jLabel3 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jtaCodigoPython = new javax.swing.JTextArea();
+        jtaCodigoPHP = new javax.swing.JTextArea();
         jLabel6 = new javax.swing.JLabel();
         jbSalvarJava = new javax.swing.JButton();
-        jbSalvarPython = new javax.swing.JButton();
+        jbSalvarPHP = new javax.swing.JButton();
         jbTraduzir = new javax.swing.JButton();
         jbMostrarTabela = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Tradutor Visualg para Java-Python");
+        setTitle("Tradutor Visualg para Java-PHP");
         setResizable(false);
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
 
         jLabel5.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jLabel5.setText("Tradutor Visualg para Java-Python");
+        jLabel5.setText("Tradutor Visualg para Java-PHP");
 
         jPanel1.setBackground(new java.awt.Color(0, 0, 0));
 
@@ -105,13 +105,13 @@ public class JFPrincipal extends javax.swing.JFrame {
         jLabel3.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
         jLabel3.setText("Código em Java");
 
-        jtaCodigoPython.setEditable(false);
-        jtaCodigoPython.setColumns(20);
-        jtaCodigoPython.setRows(5);
-        jScrollPane3.setViewportView(jtaCodigoPython);
+        jtaCodigoPHP.setEditable(false);
+        jtaCodigoPHP.setColumns(20);
+        jtaCodigoPHP.setRows(5);
+        jScrollPane3.setViewportView(jtaCodigoPHP);
 
         jLabel6.setFont(new java.awt.Font("Arial", 0, 11)); // NOI18N
-        jLabel6.setText("Código em Python");
+        jLabel6.setText("Código em PHP");
 
         jbSalvarJava.setText("Salvar");
         jbSalvarJava.setEnabled(false);
@@ -124,14 +124,14 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
         });
 
-        jbSalvarPython.setText("Salvar");
-        jbSalvarPython.setCursor(new java.awt.Cursor(java.awt.Cursor.W_RESIZE_CURSOR));
-        jbSalvarPython.setEnabled(false);
-        jbSalvarPython.setFocusPainted(false);
-        jbSalvarPython.setFocusable(false);
-        jbSalvarPython.addActionListener(new java.awt.event.ActionListener() {
+        jbSalvarPHP.setText("Salvar");
+        jbSalvarPHP.setCursor(new java.awt.Cursor(java.awt.Cursor.W_RESIZE_CURSOR));
+        jbSalvarPHP.setEnabled(false);
+        jbSalvarPHP.setFocusPainted(false);
+        jbSalvarPHP.setFocusable(false);
+        jbSalvarPHP.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jbSalvarPythonActionPerformed(evt);
+                jbSalvarPHPActionPerformed(evt);
             }
         });
 
@@ -156,7 +156,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                 .addGap(0, 0, 0)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jbSalvarJava)
-                    .addComponent(jbSalvarPython)))
+                    .addComponent(jbSalvarPHP)))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -175,7 +175,7 @@ public class JFPrincipal extends javax.swing.JFrame {
                         .addComponent(jLabel6)
                         .addGap(5, 5, 5)
                         .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jbSalvarPython, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jbSalvarPHP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                             .addComponent(jScrollPane3))))
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -281,7 +281,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
     private void jbTraduzirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbTraduzirActionPerformed
         TraduzirParaJava tradJava = new TraduzirParaJava();
-        TraduzirParaPython tradPython = new TraduzirParaPython();
+        TraduzirParaPHP tradPHP = new TraduzirParaPHP();
 
         this.tokens = Utils.popularArrayTokens();
 
@@ -297,12 +297,12 @@ public class JFPrincipal extends javax.swing.JFrame {
             this.tokens = tradJava.obterTokensAtt();
             this.classe = tradJava.obterClasse();
 
-            String codigoTraduzidoPython = tradPython.traduzir(vetCodigoOriginal, this.tokens);
+            String codigoTraduzidoPHP = tradPHP.traduzir(vetCodigoOriginal, this.tokens);
 
-            this.tokens = tradPython.obterTokensAtt();
+            this.tokens = tradPHP.obterTokensAtt();
 
             jtaCodigoJava.setText(codigoTraduzidoJava);
-            jtaCodigoPython.setText(codigoTraduzidoPython);
+            jtaCodigoPHP.setText(codigoTraduzidoPHP);
 
             jbMostrarTabela.setEnabled(true);
             jbSalvarJava.setEnabled(true);
@@ -345,13 +345,13 @@ public class JFPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jbSalvarJavaActionPerformed
 
-    private void jbSalvarPythonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarPythonActionPerformed
-        String codigoPython = jtaCodigoPython.getText();
+    private void jbSalvarPHPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbSalvarPHPActionPerformed
+        String codigoPHP = jtaCodigoPHP.getText();
 
-        if (!codigoPython.trim().isEmpty()) {
-            String arquivo = this.classe + ".py";
+        if (!codigoPHP.trim().isEmpty()) {
+            String arquivo = this.classe + ".php";
 
-            FileNameExtensionFilter filter = new FileNameExtensionFilter("Python", "py");
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("PHP", "php");
 
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Selecione um local para salvar");
@@ -368,7 +368,7 @@ public class JFPrincipal extends javax.swing.JFrame {
 
                 try {
                     try (FileOutputStream outputStream = new FileOutputStream(fileToSave)) {
-                        byte[] strToBytes = codigoPython.getBytes();
+                        byte[] strToBytes = codigoPHP.getBytes();
                         outputStream.write(strToBytes);
                     }
 
@@ -379,7 +379,7 @@ public class JFPrincipal extends javax.swing.JFrame {
             }
 
         }
-    }//GEN-LAST:event_jbSalvarPythonActionPerformed
+    }//GEN-LAST:event_jbSalvarPHPActionPerformed
 
     private void jbMostrarTabelaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbMostrarTabelaActionPerformed
         JFTabelaTokens frame = new JFTabelaTokens(tokens);
@@ -417,11 +417,11 @@ public class JFPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JButton jbMostrarTabela;
     private javax.swing.JButton jbSalvarJava;
-    private javax.swing.JButton jbSalvarPython;
+    private javax.swing.JButton jbSalvarPHP;
     private javax.swing.JButton jbSelecionarArquivo;
     private javax.swing.JButton jbTraduzir;
     private javax.swing.JTextArea jtaCodigoJava;
-    private javax.swing.JTextArea jtaCodigoPython;
+    private javax.swing.JTextArea jtaCodigoPHP;
     private javax.swing.JTextArea jtaCodigoVisualg;
     private javax.swing.JTextField jtfArquivo;
     // End of variables declaration//GEN-END:variables

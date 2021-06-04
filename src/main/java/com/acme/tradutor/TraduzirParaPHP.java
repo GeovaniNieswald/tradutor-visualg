@@ -5,7 +5,7 @@ import com.acme.tradutor.model.Variavel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TraduzirParaPython {
+public class TraduzirParaPHP {
 
     private String classe;
     private List<Token> tokens;
@@ -13,7 +13,7 @@ public class TraduzirParaPython {
     private List<Variavel> listVariaveis;
     private boolean blocoVarExtra;
 
-    public TraduzirParaPython() {
+    public TraduzirParaPHP() {
         this.classe = "";
         this.tokens = new ArrayList<>();
         this.blocoVarExtra = false;
@@ -31,15 +31,15 @@ public class TraduzirParaPython {
         this.tokens = tokens;
         this.listVariaveis = new ArrayList<>();
 
-        String codigoTraduzidoPython = "";
-        // TODO: Fazer tradução para Python
-        return codigoTraduzidoPython;
+        String codigoTraduzido = "";
+
+        return codigoTraduzido;
     }
 
     public void incrementarQtdToken(String token) {
         for (Token t : this.tokens) {
             if (t.getTokenVisualg().equalsIgnoreCase(token)) {
-                t.setQtdPython(t.getQtdPython() + 1);
+                t.setQtdPHP(t.getQtdPHP() + 1);
                 break;
             }
         }

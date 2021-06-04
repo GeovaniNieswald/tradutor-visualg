@@ -23,7 +23,7 @@ public class TraduzirParaJava {
         this.tokens = tokens;
         this.listVariaveis = new ArrayList<>();
 
-        String codigoTraduzidoJava = leDados ? "import java.util.Scanner;\n\n" : "";
+        String codigoTraduzido = leDados ? "import java.util.Scanner;\n\n" : "";
 
         int numeroLinha = 0;
         boolean blocoVar = false;
@@ -155,11 +155,11 @@ public class TraduzirParaJava {
                 }
             }
 
-            codigoTraduzidoJava += linhaTraduziada + "\n";
+            codigoTraduzido += linhaTraduziada + "\n";
             numeroLinha++;
         }
 
-        return codigoTraduzidoJava;
+        return codigoTraduzido;
     }
 
     private String substituirBlocoVar(String conteudoLinha, boolean procedimentoFuncao) {
